@@ -2,9 +2,12 @@
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/rootLayout"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+    <!-- Camera View Container -->
     <FrameLayout
         android:id="@+id/cameraViewContainer"
         android:layout_width="0dp"
@@ -13,57 +16,118 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/toolbarBg"/>
+        app:layout_constraintTop_toTopOf="parent" />
 
+    <LinearLayout
+        android:id="@+id/proximityOverlay"
+        android:layout_width="423dp"
+        android:layout_height="703dp"
+        android:background="@android:color/transparent"
+        android:gravity="bottom"
+        android:orientation="horizontal"
+        android:scrollbarSize="50dp"
+        android:weightSum="4"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHeight_percent="0.5"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/cameraViewContainer">
+
+        <!-- Repeat for 4 bars -->
+        <LinearLayout
+            android:layout_width="10dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="bottom|center_horizontal"
+            android:orientation="vertical">
+
+            <ProgressBar
+                android:id="@+id/progress_front"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="wrap_content"
+                android:layout_height="55dp"
+                android:layout_weight="0"
+                android:max="100"
+                android:maxHeight="100dip"
+                android:progress="0"
+                android:progressDrawable="@drawable/custom_progress_drawable"
+                android:rotation="-90"
+                android:rotationX="45" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="bottom"
+            android:orientation="vertical">
+
+              <ProgressBar
+                android:id="@+id/progress_back"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="wrap_content"
+                android:layout_height="55dp"
+                android:layout_weight="0"
+                android:max="100"
+                android:maxHeight="100dip"
+                android:progress="0"
+                android:progressDrawable="@drawable/custom_progress_drawable"
+                android:rotation="-90"
+                android:rotationX="45" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="bottom"
+            android:orientation="vertical"
+            android:scrollbarSize="50dp">
+
+              <ProgressBar
+                android:id="@+id/progress_left"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="wrap_content"
+                android:layout_height="55dp"
+                android:layout_weight="0"
+                android:max="100"
+                android:maxHeight="100dip"
+                android:progress="0"
+                android:progressDrawable="@drawable/custom_progress_drawable"
+                android:rotation="-90"
+                android:rotationX="45" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="bottom"
+            android:orientation="vertical">
+
+              <ProgressBar
+                android:id="@+id/progress_right"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="wrap_content"
+                android:layout_height="55dp"
+                android:layout_weight="0"
+                android:max="100"
+                android:maxHeight="100dip"
+                android:progress="0"
+                android:progressDrawable="@drawable/custom_progress_drawable"
+                android:rotation="-90"
+                android:rotationX="45" />
+        </LinearLayout>
+    </LinearLayout>
+    <!-- UVC Logo -->
     <ImageView
         android:id="@+id/uvcLogoIv"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:src="@mipmap/ic_uvc"
         android:visibility="visible"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/cameraViewContainer"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/cameraViewContainer" />
-
-    <View
-        android:id="@+id/toolbarBg"
-        android:layout_width="match_parent"
-        android:layout_height="52dp"
-        android:background="@color/black"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-
-    <ImageView
-        android:id="@+id/resolutionBtn"
-        style="@style/Camera2TopButtonStyle"
-        android:src="@mipmap/camera_resolution"
-        app:layout_constraintBottom_toBottomOf="@+id/toolbarBg"
-        app:layout_constraintEnd_toEndOf="@id/toolbarBg"
-        app:layout_constraintTop_toTopOf="@id/toolbarBg" />
-
-    <androidx.constraintlayout.widget.Barrier
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:barrierDirection="bottom"
-        app:constraint_referenced_ids="resolutionBtn" />
-
-    <androidx.constraintlayout.widget.Group
-        android:id="@+id/toolbarGroup"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        app:constraint_referenced_ids="resolutionBtn"/>
-
-
-    <TextView
-        android:id="@+id/frameRateTv"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="12dp"
-        android:layout_marginTop="12dp"
-        android:textColor="@color/white"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/cameraViewContainer" />
+        app:layout_constraintEnd_toEndOf="parent" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

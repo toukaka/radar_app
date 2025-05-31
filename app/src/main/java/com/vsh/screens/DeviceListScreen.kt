@@ -54,7 +54,6 @@ import com.jiangdg.demo.R
 
 enum class AusbcScreen() {
     Start,
-    Benchmarks,
 }
 
 object DeviceListScreen {
@@ -68,23 +67,12 @@ object DeviceListScreen {
                 fontSize = 18.sp
             )
 
-            Text(
-                text = "ID: ${product.displayName}",
-                fontSize = 14.sp
-            )
-
-            Text(
-                text = "Classes: ${product.classesStr}",
-                fontSize = 14.sp
-            )
-
         }
     }
 
     @Composable
     fun ScreenContent(
         uiState: DeviceListViewState,
-        onBenchmarks: () -> Unit,
         onReload: () -> Unit,
         onSelectUsbDevice: (UsbDevice) -> Unit
     ) {
@@ -96,12 +84,6 @@ object DeviceListScreen {
             Row(
                 modifier = Modifier.align(Alignment.End)
             ) {
-                Button(
-                    modifier = Modifier.padding(start = 16.dp),
-                    onClick = onBenchmarks
-                ) {
-                    Text("Benchmarks")
-                }
                 Button(
                     modifier = Modifier.padding(start = 16.dp),
                     onClick = onReload
@@ -120,47 +102,6 @@ object DeviceListScreen {
         }
     }
 
-    @Composable
-    fun Benchmarks(benchmarkState: BenchmarkState, onShare: ()->Unit) {
-        Column {
-            if (benchmarkState.isRunning) {
-                CircularProgressIndicator()
-            } else {
-                Button(
-                    onClick = onShare,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text(text = "Share benchmark results")
-                }
-            }
-            Text(text = benchmarkState.text)
-        }
-    }
-}
-
-@Composable
-fun AusbcAppBar(
-    canNavigateBack: Boolean,
-    navigateUp: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    TopAppBar(
-        title = { Text(stringResource(id = R.string.app_name)) },
-        colors = TopAppBarDefaults.mediumTopAppBarColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer
-        ),
-        modifier = modifier,
-        navigationIcon = {
-            if (canNavigateBack) {
-                IconButton(onClick = navigateUp) {
-                    Icon(
-                        imageVector = Icons.Filled.ArrowBack,
-                        contentDescription = stringResource(R.string.back_button)
-                    )
-                }
-            }
-        }
-    )
 }
 
 @Composable
@@ -169,15 +110,8 @@ fun AusbcApp(
     navController: NavHostController = rememberNavController()
 ) {
     Scaffold(
-        topBar = {
-            AusbcAppBar(
-                canNavigateBack = false,
-                navigateUp = { /* TODO: implement back navigation */ }
-            )
-        }
     ) { innerPadding ->
         val uiState by viewModel.state.collectAsState()
-        val benchmarkState by viewModel.benchmarkState.collectAsState()
 
         NavHost(
             navController = navController,
@@ -187,17 +121,8 @@ fun AusbcApp(
             composable(route = AusbcScreen.Start.name) {
                 DeviceListScreen.ScreenContent(
                     uiState = uiState,
-                    onBenchmarks = {
-                        viewModel.onBenchmarks()
-                        navController.navigate(AusbcScreen.Benchmarks.name)
-                    },
                     onReload = { viewModel.onEnumerate() },
                     onSelectUsbDevice = { viewModel.onClick(it) })
-            }
-            composable(route = AusbcScreen.Benchmarks.name) {
-                DeviceListScreen.Benchmarks(
-                    benchmarkState = benchmarkState,
-                    onShare = viewModel::onShareBenchmarkResults )
             }
         }
     }

@@ -381,9 +381,6 @@ class RenderManager(
         mFrameRate++
         mEndTime = System.currentTimeMillis()
         if (mEndTime - mStartTime >= 1000) {
-            if (Utils.debugCamera) {
-                Logger.i(TAG, "camera render frame rate is $mFrameRate fps-->${Thread.currentThread().name}")
-            }
             EventBus.with<Int>(BusKey.KEY_FRAME_RATE).postMessage(mFrameRate)
             mStartTime = mEndTime
             mFrameRate = 0

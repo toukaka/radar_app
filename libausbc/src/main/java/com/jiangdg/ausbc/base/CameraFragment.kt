@@ -42,6 +42,7 @@ import com.jiangdg.usb.USBMonitor
 import timber.log.Timber
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicBoolean
+import android.content.res.Resources
 
 /**Extends from BaseFragment for one uvc camera
  *
@@ -415,16 +416,20 @@ abstract class CameraFragment : BaseFragment(), ICameraStateCallBack {
     protected open fun getGravity() = Gravity.CENTER
 
     protected open fun getCameraRequest(): CameraRequest {
-        return CameraRequest.Builder()
-            .setPreviewWidth(640)
-            .setPreviewHeight(480)
-            .setRenderMode(CameraRequest.RenderMode.OPENGL)
-            .setDefaultRotateType(RotateType.ANGLE_0)
-            .setAudioSource(CameraRequest.AudioSource.SOURCE_SYS_MIC)
-            .setPreviewFormat(CameraRequest.PreviewFormat.FORMAT_MJPEG)
-            .setAspectRatioShow(true)
-            .setCaptureRawImage(false)
-            .setRawPreviewData(false)
-            .create()
-    }
+    val metrics = Resources.getSystem().displayMetrics
+    val screenWidth = metrics.widthPixels
+    val screenHeight = metrics.heightPixels
+
+    return CameraRequest.Builder()
+        .setPreviewWidth(screenWidth)
+        .setPreviewHeight(screenHeight)
+        .setRenderMode(CameraRequest.RenderMode.OPENGL)
+        .setDefaultRotateType(RotateType.ANGLE_0)
+        .setAudioSource(CameraRequest.AudioSource.SOURCE_SYS_MIC)
+        .setPreviewFormat(CameraRequest.PreviewFormat.FORMAT_MJPEG)
+        .setAspectRatioShow(true)
+        .setCaptureRawImage(false)
+        .setRawPreviewData(false)
+        .create()
+}
 }

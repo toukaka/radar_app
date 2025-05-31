@@ -16,6 +16,9 @@
  */
 package com.jiangdg.demo
 
+import android.graphics.drawable.ClipDrawable
+import android.graphics.drawable.ColorDrawable
+
 import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
 import android.animation.AnimatorSet
@@ -39,25 +42,66 @@ import com.jiangdg.ausbc.widget.AspectRatioTextureView
 import com.jiangdg.ausbc.widget.IAspectRatio
 import com.jiangdg.demo.databinding.FragmentDemoBinding
 
+import android.os.Handler
+import android.os.Looper
+
+import android.widget.ProgressBar
+import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlin.random.Random
+
 /** CameraFragment Usage Demo
  *
  * @author Created by jiangdg on 2022/1/28
  */
-class DemoFragment : CameraFragment(), View.OnClickListener {
+
+class DemoFragment : CameraFragment() {
     private var mMoreMenu: PopupWindow? = null
     private lateinit var mViewBinding: FragmentDemoBinding
+    private lateinit var progressFront: ProgressBar
+    private lateinit var progressBack: ProgressBar
+    private lateinit var progressLeft: ProgressBar
+    private lateinit var progressRight: ProgressBar
 
+    private val handler = Handler(Looper.getMainLooper())
+    private val updateTask = object : Runnable {
+        override fun run() {
+            updateRandomProgress(progressFront)
+            updateRandomProgress(progressBack)
+            updateRandomProgress(progressLeft)
+            updateRandomProgress(progressRight)
+            handler.postDelayed(this, 1000L)
+        }
+    }
     override fun initView() {
         super.initView()
-        mViewBinding.resolutionBtn.setOnClickListener(this)
+        progressFront = mViewBinding.root.findViewById(R.id.progress_front)
+        progressBack = mViewBinding.root.findViewById(R.id.progress_back)
+        progressLeft = mViewBinding.root.findViewById(R.id.progress_left)
+        progressRight = mViewBinding.root.findViewById(R.id.progress_right)
     }
 
+    private fun updateRandomProgress(bar: ProgressBar) {
+        val value = Random.nextInt(0, 101)
+        updateBarColor(bar, value)
+    }
+
+    private fun updateBarColor(bar: ProgressBar, value: Int) {
+        val color = when {
+            value <= 50 -> 0x804CAF50.toInt() // green (50% transparent)
+            value <= 75 -> 0x80FFA500.toInt() // orange
+            else -> 0x80FF0000.toInt()        // red
+        }
+        val drawable = ColorDrawable(color)
+        val clip = ClipDrawable(drawable, Gravity.LEFT, ClipDrawable.HORIZONTAL)
+        bar.progressDrawable = clip
+        bar.progress = value
+    }
     override fun initData() {
         super.initData()
-        EventBus.with<Int>(BusKey.KEY_FRAME_RATE).observe(this, {
-            mViewBinding.frameRateTv.text = "frame rate:  $it fps"
-        })
-
+        /* Here main Frame of the camera */
         EventBus.with<Boolean>(BusKey.KEY_RENDER_READY).observe(this, { ready ->
             if (! ready) return@observe
         })
@@ -77,19 +121,15 @@ class DemoFragment : CameraFragment(), View.OnClickListener {
 
     private fun handleCameraError(msg: String?) {
         mViewBinding.uvcLogoIv.visibility = View.VISIBLE
-        mViewBinding.frameRateTv.visibility = View.GONE
         Toast.makeText(requireContext(), "camera opened error: $msg", Toast.LENGTH_LONG).show()
     }
 
-    private fun handleCameraClosed() {
-        mViewBinding.uvcLogoIv.visibility = View.VISIBLE
-        mViewBinding.frameRateTv.visibility = View.GONE
+    private fun handleCameraClosed() {        mViewBinding.uvcLogoIv.visibility = View.VISIBLE
         Toast.makeText(requireContext(), "camera closed success", Toast.LENGTH_LONG).show()
     }
 
     private fun handleCameraOpened() {
         mViewBinding.uvcLogoIv.visibility = View.GONE
-        mViewBinding.frameRateTv.visibility = View.VISIBLE
         Toast.makeText(requireContext(), "camera opened success", Toast.LENGTH_LONG).show()
     }
 
@@ -107,20 +147,14 @@ class DemoFragment : CameraFragment(), View.OnClickListener {
     }
 
     override fun getGravity(): Int = Gravity.CENTER
+    override fun onResume() {
+        super.onResume()
+        handler.post(updateTask)
+    }
 
-    override fun onClick(v: View?) {
-        clickAnimation(v!!, object : AnimatorListenerAdapter() {
-            override fun onAnimationEnd(animation: Animator) {
-                when (v) {
-                    mViewBinding.resolutionBtn -> {
-                        showResolutionDialog()
-                    }
-                    // more settings
-                    else -> {
-                    }
-                }
-            }
-        })
+    override fun onPause() {
+        super.onPause()
+        handler.removeCallbacks(updateTask)
     }
 
     @SuppressLint("CheckResult")

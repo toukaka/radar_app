@@ -32,10 +32,22 @@ import com.jiangdg.demo.MainActivity
 import com.vsh.screens.AusbcApp
 import com.vsh.screens.DeviceListViewModel
 import com.vsh.screens.DeviceListViewModelFactory
-import com.vsh.uvc.JpegBenchmark
 import kotlinx.coroutines.launch
 import timber.log.Timber
 
+data class UsbDevice(
+    val usbDevcieId: Int,
+    val displayName: String,
+    val vendorName: String,
+    val classesStr: String
+)
+
+val usbDevice_FIXED = UsbDevice(
+    usbDevcieId = 1002,
+    displayName = "1902:8301 /dev/bus/usb/001/002",
+    vendorName = "6402",
+    classesStr = "USB_CLASS_MISC, USB_CLASS_VIDEO"
+)
 
 class DevicesActivity : ComponentActivity() {
 
@@ -48,9 +60,6 @@ class DevicesActivity : ComponentActivity() {
         viewModel = ViewModelProvider(
             this, DeviceListViewModelFactory(
                 usbManager = applicationContext.getSystemService(USB_SERVICE) as UsbManager,
-                jpegBenchmark = JpegBenchmark(
-                    context = applicationContext
-                )
             )
         ).get(DeviceListViewModel::class.java)
         setContent {
@@ -65,26 +74,11 @@ class DevicesActivity : ComponentActivity() {
         viewModel.begin()
 
         lifecycleScope.launch {
-            viewModel.state.collect {
-                if (it.openPreviewDeviceId != null) {
-                    viewModel.onPreviewOpened()
-                    val intent =
-                        MainActivity.newInstance(applicationContext, it.openPreviewDeviceId)
-                    startActivity(intent)
-                }
-            }
-        }
-        lifecycleScope.launch {
-            viewModel.benchmarkState.collect {
-                if (it.needToShareText) {
-                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
-                        putExtra(Intent.EXTRA_TEXT, it.text)
-                        type = "text/plain"
-                    }
-                    val chooser = Intent.createChooser(shareIntent, "Share via")
-                    startActivity(chooser)
-                    viewModel.onShareBenchmarkResultsDismissed()
-                }
+            viewModel.state.collect { 
+                viewModel.onPreviewOpened()
+                val intent =
+                    MainActivity.newInstance(applicationContext, usbDevice_FIXED.usbDevcieId)
+                startActivity(intent)
             }
         }
     }
