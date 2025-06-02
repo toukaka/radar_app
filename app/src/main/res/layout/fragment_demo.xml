@@ -27,6 +27,38 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideline33"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintEnd_toStartOf="@id/sidePanelGuideline"
+        app:layout_constraintGuide_percent="0.33" />
+
+    <View
+        android:layout_width="4096dp"
+        android:layout_height="5dp"
+        android:background="#90EE90"
+        android:rotation="93"
+        android:rotationX="28"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/guideline33"
+        app:layout_constraintTop_toTopOf="parent" />
+
+    <View
+        android:layout_width="4096dp"
+        android:layout_height="5dp"
+        android:background="#90EE90"
+        android:rotation="-93"
+        android:rotationX="28"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="@id/guideline33"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/guideline33"
+        app:layout_constraintTop_toTopOf="parent" />
+
     <LinearLayout
         android:id="@+id/proximityOverlay"
         android:layout_width="0dp"
@@ -170,7 +202,7 @@
             android:layout_weight="1"
             android:gravity="top|center_horizontal"
             android:orientation="vertical"
-            android:rotation="-19">
+            android:rotation="-30">
 
             <ProgressBar
                 android:id="@+id/progress_front_overlay"
@@ -185,7 +217,7 @@
 
         <LinearLayout
             android:layout_width="0dp"
-            android:layout_height="200dp"
+            android:layout_height="120dp"
             android:layout_weight="1"
             android:gravity="top|center_horizontal"
             android:orientation="vertical"
@@ -205,7 +237,7 @@
 
         <LinearLayout
             android:layout_width="0dp"
-            android:layout_height="200dp"
+            android:layout_height="120dp"
             android:layout_weight="1"
             android:gravity="top|center_horizontal"
             android:orientation="vertical"
@@ -229,7 +261,7 @@
             android:layout_weight="1"
             android:gravity="top|center_horizontal"
             android:orientation="vertical"
-            android:rotation="19">
+            android:rotation="30">
 
             <ProgressBar
                 android:id="@+id/progress_right_overlay"
