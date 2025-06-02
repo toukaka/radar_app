@@ -37,8 +37,9 @@
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
+            android:gravity="bottom|center_horizontal"
             android:orientation="vertical"
-            android:gravity="bottom|center_horizontal">
+            android:rotation="-19">
 
             <ProgressBar
                 android:id="@+id/progress_front"
@@ -47,9 +48,9 @@
                 android:layout_height="0dp"
                 android:max="100"
                 android:progress="0"
+                android:progressDrawable="@drawable/custom_progress_drawable"
                 android:rotation="-90"
-                android:translationY="20dp"
-                android:progressDrawable="@drawable/custom_progress_drawable" />
+                android:translationY="20dp" />
         </LinearLayout>
 
         <!-- Back bar (plus haute) -->
@@ -57,8 +58,10 @@
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
+            android:gravity="bottom|center_horizontal"
             android:orientation="vertical"
-            android:gravity="bottom|center_horizontal">
+            android:rotationX="28"
+            android:rotationY="-19">
 
             <ProgressBar
                 android:id="@+id/progress_back"
@@ -67,9 +70,9 @@
                 android:layout_height="0dp"
                 android:max="100"
                 android:progress="0"
+                android:progressDrawable="@drawable/custom_progress_drawable"
                 android:rotation="-90"
-                android:translationY="10dp"
-                android:progressDrawable="@drawable/custom_progress_drawable" />
+                android:translationY="10dp" />
         </LinearLayout>
 
         <!-- Left bar (plus haute) -->
@@ -77,8 +80,10 @@
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
+            android:gravity="bottom|center_horizontal"
             android:orientation="vertical"
-            android:gravity="bottom|center_horizontal">
+            android:rotationX="28"
+            android:rotationY="19">
 
             <ProgressBar
                 android:id="@+id/progress_left"
@@ -87,9 +92,9 @@
                 android:layout_height="0dp"
                 android:max="100"
                 android:progress="0"
+                android:progressDrawable="@drawable/custom_progress_drawable"
                 android:rotation="-90"
-                android:translationY="10dp"
-                android:progressDrawable="@drawable/custom_progress_drawable" />
+                android:translationY="10dp" />
         </LinearLayout>
 
         <!-- Right bar -->
@@ -97,8 +102,9 @@
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
+            android:gravity="bottom|center_horizontal"
             android:orientation="vertical"
-            android:gravity="bottom|center_horizontal">
+            android:rotation="19">
 
             <ProgressBar
                 android:id="@+id/progress_right"
@@ -107,9 +113,9 @@
                 android:layout_height="0dp"
                 android:max="100"
                 android:progress="0"
+                android:progressDrawable="@drawable/custom_progress_drawable"
                 android:rotation="-90"
-                android:translationY="20dp"
-                android:progressDrawable="@drawable/custom_progress_drawable" />
+                android:translationY="20dp" />
         </LinearLayout>
     </LinearLayout>
 

@@ -1,0 +1,40 @@
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Background -->
+    <item android:id="@android:id/background">
+        <shape android:shape="rectangle">
+            <solid android:color="#33FFFFFF" /> <!-- White with 20% opacity -->
+        </shape>
+    </item>
+
+    <!-- Secondary progress (if used) -->
+    <item android:id="@android:id/secondaryProgress">
+        <clip android:gravity="bottom" android:clipOrientation="horizontal">
+            <shape android:shape="rectangle">
+                <solid android:color="#B3FFA500" /> <!-- Orange @ 70% -->
+            </shape>
+        </clip>
+    </item>
+
+    <!-- Primary progress -->
+    <item android:id="@android:id/progress">
+        <clip android:gravity="bottom" android:clipOrientation="horizontal">
+            <selector>
+                <item android:maxLevel="5000">
+                    <shape android:shape="rectangle">
+                        <solid android:color="#B300FF00" /> <!-- Green @ 70% -->
+                    </shape>
+                </item>
+                <item android:maxLevel="7500">
+                    <shape android:shape="rectangle">
+                        <solid android:color="#B3FFA500" /> <!-- Orange @ 70% -->
+                    </shape>
+                </item>
+                <item>
+                    <shape android:shape="rectangle">
+                        <solid android:color="#B3FF0000" /> <!-- Red @ 70% -->
+                    </shape>
+                </item>
+            </selector>
+        </clip>
+    </item>
+</layer-list>
