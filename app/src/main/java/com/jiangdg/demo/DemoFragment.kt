@@ -20,7 +20,6 @@ import android.graphics.drawable.ClipDrawable
 import android.graphics.drawable.ColorDrawable
 
 import android.animation.Animator
-import android.animation.AnimatorListenerAdapter
 import android.animation.AnimatorSet
 import android.animation.ObjectAnimator
 import android.annotation.SuppressLint
@@ -31,8 +30,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.PopupWindow
 import android.widget.Toast
-import com.afollestad.materialdialogs.MaterialDialog
-import com.afollestad.materialdialogs.list.listItemsSingleChoice
+
 import com.jiangdg.ausbc.MultiCameraClient
 import com.jiangdg.ausbc.base.CameraFragment
 import com.jiangdg.ausbc.callback.ICameraStateCallBack
@@ -42,20 +40,54 @@ import com.jiangdg.ausbc.widget.AspectRatioTextureView
 import com.jiangdg.ausbc.widget.IAspectRatio
 import com.jiangdg.demo.databinding.FragmentDemoBinding
 
-import android.os.Handler
-import android.os.Looper
 
 import android.widget.ProgressBar
-import androidx.fragment.app.Fragment
-import androidx.lifecycle.lifecycleScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlin.random.Random
+
+import android.bluetooth.BluetoothDevice
+import android.bluetooth.BluetoothAdapter
+import android.bluetooth.BluetoothSocket
+
+import android.util.Log
+import java.io.IOException
+import java.util.*
+
+
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+
+
 
 /** CameraFragment Usage Demo
  *
  * @author Created by jiangdg on 2022/1/28
  */
+
+ class BluetoothReader(private val socket: BluetoothSocket) {
+
+    private var running = false
+    private lateinit var readerThread: Thread
+
+    fun startReading(onDataReceived: (String) -> Unit) {
+        running = true
+        readerThread = Thread {
+            try {
+                val input = socket.inputStream.bufferedReader()
+
+                while (running && !Thread.currentThread().isInterrupted) {
+                    val line = input.readLine()
+                    if (line != null) {
+                        onDataReceived(line)  // Send data back to UI
+                    }
+                }
+            } catch (e: IOException) {
+                e.printStackTrace()
+            }
+        }
+        readerThread.start()
+    }
+}
+
 
 class DemoFragment : CameraFragment() {
     private var mMoreMenu: PopupWindow? = null
@@ -65,16 +97,93 @@ class DemoFragment : CameraFragment() {
     private lateinit var progressLeft: ProgressBar
     private lateinit var progressRight: ProgressBar
 
-    private val handler = Handler(Looper.getMainLooper())
-    private val updateTask = object : Runnable {
-        override fun run() {
-            updateRandomProgress(progressFront)
-            updateRandomProgress(progressBack)
-            updateRandomProgress(progressLeft)
-            updateRandomProgress(progressRight)
-            handler.postDelayed(this, 1000L)
+    private val TAG = "BluetoothClient"
+    private val DEVICE_NAME = "sah1lpt671" // ou le nom exact de ton module
+    val MY_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB")  // Standard SPP UUID
+
+
+    @SuppressLint("MissingPermission")
+    private fun connectToBluetoothDevice() {
+
+        val bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
+        if (bluetoothAdapter == null) {
+             Log.e(TAG, "Bluetooth non supporté")
+             return
         }
+        Log.i("BluetoothClient", "App started successfully")
+        if (!bluetoothAdapter.isEnabled) {
+            Log.e(TAG, "Bluetooth désactivé")
+            return
+        }
+
+        if (bluetoothAdapter == null) {
+            Log.e("BluetoothClient", "Bluetooth not supported on this device")
+            return
+        }
+
+        if (!bluetoothAdapter.isEnabled) {
+            Log.e("BluetoothClient", "Bluetooth is not enabled")
+            return
+        }
+
+        val pairedDevices = bluetoothAdapter.bondedDevices
+
+        var device: BluetoothDevice? = null  // Declare once outside
+
+        if (pairedDevices.isEmpty()) {
+            Log.w("BluetoothClient", "No paired devices found")
+        } else {
+            for (dev in pairedDevices) {
+                if (dev.name == DEVICE_NAME) {
+                    device = bluetoothAdapter.getRemoteDevice(dev.address)
+                    Log.i("BluetoothClient", "Matched device found: ${device.name}")
+                    break  // Stop looping once found
+                }
+            }
+        }
+
+        if (device == null) {
+            Log.e("BluetoothClient", "Périphérique '$DEVICE_NAME' non appairé")
+            return
+        } else {
+            Log.i("BluetoothClient", "**Paired device: ${device.name}")
+        }
+
+        val serverSocket = bluetoothAdapter.listenUsingRfcommWithServiceRecord("MyAppSPP", MY_UUID)
+        Log.i("BluetoothClient", "**socket has been created")
+        Thread {
+            val socket = serverSocket.accept()  // Blocks until connection or error
+            Log.i("BluetoothClient", "**socket has been accepted")
+            socket?.let {
+                val reader = BluetoothReader(socket)
+                reader.startReading { data ->
+                    requireActivity().runOnUiThread {
+                        Log.i("BluetoothClient", "Received: $data")
+                        // Update UI with data here (e.g., setText(), update progress bar)
+                        val parts = data.split(",")
+                        if (parts.size == 4) {
+                            val value_front = parts[0].trim().toIntOrNull()
+                            val value_back = parts[1].trim().toIntOrNull()
+                            val value_left = parts[2].trim().toIntOrNull()
+                            val value_right = parts[3].trim().toIntOrNull()
+                            if (value_front != null && value_back != null && value_left != null && value_right != null) {
+                                Log.i("BluetoothClient", "Parsed: front=$value_front, back=$value_back, left=$value_left, right=$value_right")
+                                //update the screen
+                                updateProgress(progressFront, value_front)
+                                updateProgress(progressBack, value_back)
+                                updateProgress(progressLeft, value_left)
+                                updateProgress(progressRight, value_right)
+                            } else {
+                                Log.w("BluetoothClient", "Invalid numeric data received.")
+                            }
+                        }
+                    }
+                }
+            }
+        }.start()
     }
+
+
     override fun initView() {
         super.initView()
         progressFront = mViewBinding.root.findViewById(R.id.progress_front)
@@ -83,19 +192,23 @@ class DemoFragment : CameraFragment() {
         progressRight = mViewBinding.root.findViewById(R.id.progress_right)
     }
 
-    private fun updateRandomProgress(bar: ProgressBar) {
-        val value = Random.nextInt(0, 101)
+    private fun updateProgress(bar: ProgressBar, value: Int) {
         updateBarColor(bar, value)
+        Log.i("BluetoothClient", "${bar.id} --- $value")
     }
 
     private fun updateBarColor(bar: ProgressBar, value: Int) {
         val color = when {
-            value <= 50 -> 0x804CAF50.toInt() // green (50% transparent)
+            value <= 50 -> 0x804CAF50.toInt() // green
             value <= 75 -> 0x80FFA500.toInt() // orange
             else -> 0x80FF0000.toInt()        // red
         }
+
         val drawable = ColorDrawable(color)
         val clip = ClipDrawable(drawable, Gravity.LEFT, ClipDrawable.HORIZONTAL)
+
+        // Force drawable reset before setting progress
+        bar.progress = 0
         bar.progressDrawable = clip
         bar.progress = value
     }
@@ -146,49 +259,14 @@ class DemoFragment : CameraFragment() {
         return mViewBinding.root
     }
 
-    override fun getGravity(): Int = Gravity.CENTER
+    override fun getGravity(): Int = Gravity.BOTTOM
     override fun onResume() {
         super.onResume()
-        handler.post(updateTask)
+        connectToBluetoothDevice()
     }
 
     override fun onPause() {
         super.onPause()
-        handler.removeCallbacks(updateTask)
-    }
-
-    @SuppressLint("CheckResult")
-    private fun showResolutionDialog() {
-        mMoreMenu?.dismiss()
-        getAllPreviewSizes().let { previewSizes ->
-            if (previewSizes.isNullOrEmpty()) {
-                Toast.makeText(requireContext(), "Get camera preview size failed", Toast.LENGTH_LONG).show()
-                return
-            }
-            val list = arrayListOf<String>()
-            var selectedIndex: Int = -1
-            for (index in (0 until previewSizes.size)) {
-                val w = previewSizes[index].width
-                val h = previewSizes[index].height
-                getCurrentPreviewSize()?.apply {
-                    if (width == w && height == h) {
-                        selectedIndex = index
-                    }
-                }
-                list.add("$w x $h")
-            }
-            MaterialDialog(requireContext()).show {
-                listItemsSingleChoice(
-                    items = list,
-                    initialSelection = selectedIndex
-                ) { dialog, index, text ->
-                    if (selectedIndex == index) {
-                        return@listItemsSingleChoice
-                    }
-                    updateResolution(previewSizes[index].width, previewSizes[index].height)
-                }
-            }
-        }
     }
 
     private fun clickAnimation(v: View, listener: Animator.AnimatorListener) {

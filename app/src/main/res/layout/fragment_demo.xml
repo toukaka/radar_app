@@ -35,39 +35,18 @@
 
         <!-- Repeat for 4 bars -->
         <LinearLayout
-            android:layout_width="10dp"
+            android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:gravity="bottom|center_horizontal"
-            android:orientation="vertical">
+            android:gravity="bottom"
+            android:orientation="vertical"
+            android:scrollbarSize="50dp">
 
             <ProgressBar
                 android:id="@+id/progress_front"
                 style="?android:attr/progressBarStyleHorizontal"
                 android:layout_width="wrap_content"
-                android:layout_height="55dp"
-                android:layout_weight="0"
-                android:max="100"
-                android:maxHeight="100dip"
-                android:progress="0"
-                android:progressDrawable="@drawable/custom_progress_drawable"
-                android:rotation="-90"
-                android:rotationX="45" />
-        </LinearLayout>
-
-        <LinearLayout
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:gravity="bottom"
-            android:orientation="vertical">
-
-              <ProgressBar
-                android:id="@+id/progress_back"
-                style="?android:attr/progressBarStyleHorizontal"
-                android:layout_width="wrap_content"
-                android:layout_height="55dp"
-                android:layout_weight="0"
+                android:layout_height="546dp"
                 android:max="100"
                 android:maxHeight="100dip"
                 android:progress="0"
@@ -84,12 +63,11 @@
             android:orientation="vertical"
             android:scrollbarSize="50dp">
 
-              <ProgressBar
-                android:id="@+id/progress_left"
+            <ProgressBar
+                android:id="@+id/progress_back"
                 style="?android:attr/progressBarStyleHorizontal"
                 android:layout_width="wrap_content"
-                android:layout_height="55dp"
-                android:layout_weight="0"
+                android:layout_height="546dp"
                 android:max="100"
                 android:maxHeight="100dip"
                 android:progress="0"
@@ -103,14 +81,35 @@
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:gravity="bottom"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:scrollbarSize="50dp">
 
-              <ProgressBar
+            <ProgressBar
+                android:id="@+id/progress_left"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="wrap_content"
+                android:layout_height="546dp"
+                android:max="100"
+                android:maxHeight="100dip"
+                android:progress="0"
+                android:progressDrawable="@drawable/custom_progress_drawable"
+                android:rotation="-90"
+                android:rotationX="45" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="bottom"
+            android:orientation="vertical"
+            android:scrollbarSize="50dp">
+
+            <ProgressBar
                 android:id="@+id/progress_right"
                 style="?android:attr/progressBarStyleHorizontal"
                 android:layout_width="wrap_content"
-                android:layout_height="55dp"
-                android:layout_weight="0"
+                android:layout_height="546dp"
                 android:max="100"
                 android:maxHeight="100dip"
                 android:progress="0"
