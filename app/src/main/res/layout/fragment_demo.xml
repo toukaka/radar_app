@@ -20,104 +20,99 @@
 
     <LinearLayout
         android:id="@+id/proximityOverlay"
-        android:layout_width="423dp"
-        android:layout_height="703dp"
-        android:background="@android:color/transparent"
-        android:gravity="bottom"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
         android:orientation="horizontal"
-        android:scrollbarSize="50dp"
+        android:gravity="bottom"
         android:weightSum="4"
+        android:layout_marginBottom="16dp"
+        android:background="@android:color/transparent"
         app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHeight_percent="0.5"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="@+id/cameraViewContainer">
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHeight_percent="0.33">
 
-        <!-- Repeat for 4 bars -->
+        <!-- Front bar -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:gravity="bottom"
             android:orientation="vertical"
-            android:scrollbarSize="50dp">
+            android:gravity="bottom|center_horizontal">
 
             <ProgressBar
                 android:id="@+id/progress_front"
                 style="?android:attr/progressBarStyleHorizontal"
                 android:layout_width="wrap_content"
-                android:layout_height="546dp"
+                android:layout_height="0dp"
                 android:max="100"
-                android:maxHeight="100dip"
                 android:progress="0"
-                android:progressDrawable="@drawable/custom_progress_drawable"
                 android:rotation="-90"
-                android:rotationX="45" />
+                android:translationY="20dp"
+                android:progressDrawable="@drawable/custom_progress_drawable" />
         </LinearLayout>
 
+        <!-- Back bar (plus haute) -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:gravity="bottom"
             android:orientation="vertical"
-            android:scrollbarSize="50dp">
+            android:gravity="bottom|center_horizontal">
 
             <ProgressBar
                 android:id="@+id/progress_back"
                 style="?android:attr/progressBarStyleHorizontal"
                 android:layout_width="wrap_content"
-                android:layout_height="546dp"
+                android:layout_height="0dp"
                 android:max="100"
-                android:maxHeight="100dip"
                 android:progress="0"
-                android:progressDrawable="@drawable/custom_progress_drawable"
                 android:rotation="-90"
-                android:rotationX="45" />
+                android:translationY="10dp"
+                android:progressDrawable="@drawable/custom_progress_drawable" />
         </LinearLayout>
 
+        <!-- Left bar (plus haute) -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:gravity="bottom"
             android:orientation="vertical"
-            android:scrollbarSize="50dp">
+            android:gravity="bottom|center_horizontal">
 
             <ProgressBar
                 android:id="@+id/progress_left"
                 style="?android:attr/progressBarStyleHorizontal"
                 android:layout_width="wrap_content"
-                android:layout_height="546dp"
+                android:layout_height="0dp"
                 android:max="100"
-                android:maxHeight="100dip"
                 android:progress="0"
-                android:progressDrawable="@drawable/custom_progress_drawable"
                 android:rotation="-90"
-                android:rotationX="45" />
+                android:translationY="10dp"
+                android:progressDrawable="@drawable/custom_progress_drawable" />
         </LinearLayout>
 
+        <!-- Right bar -->
         <LinearLayout
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:gravity="bottom"
             android:orientation="vertical"
-            android:scrollbarSize="50dp">
+            android:gravity="bottom|center_horizontal">
 
             <ProgressBar
                 android:id="@+id/progress_right"
                 style="?android:attr/progressBarStyleHorizontal"
                 android:layout_width="wrap_content"
-                android:layout_height="546dp"
+                android:layout_height="0dp"
                 android:max="100"
-                android:maxHeight="100dip"
                 android:progress="0"
-                android:progressDrawable="@drawable/custom_progress_drawable"
                 android:rotation="-90"
-                android:rotationX="45" />
+                android:translationY="20dp"
+                android:progressDrawable="@drawable/custom_progress_drawable" />
         </LinearLayout>
     </LinearLayout>
+
     <!-- UVC Logo -->
     <ImageView
         android:id="@+id/uvcLogoIv"

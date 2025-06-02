@@ -56,7 +56,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 
-
+import android.content.res.Resources
 
 /** CameraFragment Usage Demo
  *
@@ -193,25 +193,40 @@ class DemoFragment : CameraFragment() {
     }
 
     private fun updateProgress(bar: ProgressBar, value: Int) {
-        updateBarColor(bar, value)
+        updateBar(bar, value)
         Log.i("BluetoothClient", "${bar.id} --- $value")
     }
 
-    private fun updateBarColor(bar: ProgressBar, value: Int) {
+    private fun updateBar(bar: ProgressBar, value: Int) {
+        // Déterminer la couleur selon la valeur
         val color = when {
-            value <= 50 -> 0x804CAF50.toInt() // green
-            value <= 75 -> 0x80FFA500.toInt() // orange
-            else -> 0x80FF0000.toInt()        // red
+            value <= 50 -> 0x804CAF50.toInt() // Vert (semi-transparent)
+            value <= 75 -> 0x80FFA500.toInt() // Orange
+            else -> 0x80FF0000.toInt()        // Rouge
         }
-
+    
+        // Appliquer le fond coloré
         val drawable = ColorDrawable(color)
         val clip = ClipDrawable(drawable, Gravity.LEFT, ClipDrawable.HORIZONTAL)
-
-        // Force drawable reset before setting progress
+    
+        // Forcer le reset du drawable
         bar.progress = 0
         bar.progressDrawable = clip
+    
+        // Appliquer la valeur après le drawable
         bar.progress = value
+    
+        // Calcul dynamique de la hauteur (1/3 de l'écran)
+        val screenHeight = Resources.getSystem().displayMetrics.heightPixels
+        val maxBarHeight = screenHeight / 3f
+        val newHeight = (maxBarHeight * (value / 100f)).toInt().coerceAtLeast(1) // éviter height=0
+    
+        // Appliquer la hauteur dynamique
+        val params = bar.layoutParams
+        params.height = newHeight
+        bar.layoutParams = params
     }
+    
     override fun initData() {
         super.initData()
         /* Here main Frame of the camera */
