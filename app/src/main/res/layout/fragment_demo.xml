@@ -132,24 +132,119 @@
     </LinearLayout>
 
     <!-- Right container: Empty side panel -->
-    <FrameLayout
+<FrameLayout
     android:id="@+id/sidePanel"
     android:layout_width="0dp"
     android:layout_height="0dp"
-    app:layout_constraintTop_toTopOf="parent"
     android:background="@android:color/black"
+    app:layout_constraintTop_toTopOf="parent"
     app:layout_constraintBottom_toBottomOf="parent"
     app:layout_constraintStart_toEndOf="@id/sidePanelGuideline"
-    app:layout_constraintEnd_toEndOf="parent" >
+    app:layout_constraintEnd_toEndOf="parent">
 
-        <ImageView
-            android:id="@+id/carImageView"
-            android:background="@android:color/black"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:src="@mipmap/car"
-            android:scaleType="fitCenter"/>
-        </FrameLayout>
+    <!-- Background Car Image -->
+    <ImageView
+        android:id="@+id/carImageView"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:src="@mipmap/car"
+        android:scaleType="fitCenter"
+        android:background="@android:color/black" />
+
+    <!-- Overlay Progress Bars at the TOP -->
+    <LinearLayout
+        android:id="@+id/proximityOverlayRight"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="top"
+        android:weightSum="4"
+        android:layout_marginTop="16dp"
+        android:background="@android:color/transparent">
+
+        <!-- Repeat 4 vertical progress bars with new IDs -->
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="200dp"
+            android:layout_weight="1"
+            android:gravity="top|center_horizontal"
+            android:orientation="vertical"
+            android:rotation="-19">
+
+            <ProgressBar
+                android:id="@+id/progress_front_overlay"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="24dp"
+                android:layout_height="match_parent"
+                android:max="100"
+                android:progress="0"
+                android:progressDrawable="@drawable/custom_progress_drawable"
+                android:rotation="-90" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="200dp"
+            android:layout_weight="1"
+            android:gravity="top|center_horizontal"
+            android:orientation="vertical"
+            android:rotationX="28"
+            android:rotationY="-19">
+
+            <ProgressBar
+                android:id="@+id/progress_back_overlay"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="24dp"
+                android:layout_height="match_parent"
+                android:max="100"
+                android:progress="0"
+                android:progressDrawable="@drawable/custom_progress_drawable"
+                android:rotation="-90" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="200dp"
+            android:layout_weight="1"
+            android:gravity="top|center_horizontal"
+            android:orientation="vertical"
+            android:rotationX="28"
+            android:rotationY="19">
+
+            <ProgressBar
+                android:id="@+id/progress_left_overlay"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="24dp"
+                android:layout_height="match_parent"
+                android:max="100"
+                android:progress="0"
+                android:progressDrawable="@drawable/custom_progress_drawable"
+                android:rotation="-90" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="200dp"
+            android:layout_weight="1"
+            android:gravity="top|center_horizontal"
+            android:orientation="vertical"
+            android:rotation="19">
+
+            <ProgressBar
+                android:id="@+id/progress_right_overlay"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="24dp"
+                android:layout_height="match_parent"
+                android:max="100"
+                android:progress="0"
+                android:progressDrawable="@drawable/custom_progress_drawable"
+                android:rotation="-90" />
+        </LinearLayout>
+
+    </LinearLayout>
+</FrameLayout>
+
 
 
     <!-- UVC Logo -->

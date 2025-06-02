@@ -96,6 +96,10 @@ class DemoFragment : CameraFragment() {
     private lateinit var progressBack: ProgressBar
     private lateinit var progressLeft: ProgressBar
     private lateinit var progressRight: ProgressBar
+    private lateinit var progressFront_overlay: ProgressBar
+    private lateinit var progressBack_overlay: ProgressBar
+    private lateinit var progressLeft_overlay: ProgressBar
+    private lateinit var progressRight_overlay: ProgressBar
 
     private val TAG = "BluetoothClient"
     private val DEVICE_NAME = "sah1lpt671" // ou le nom exact de ton module
@@ -173,6 +177,12 @@ class DemoFragment : CameraFragment() {
                                 updateProgress(progressBack, value_back)
                                 updateProgress(progressLeft, value_left)
                                 updateProgress(progressRight, value_right)
+
+                                updateProgress(progressFront_overlay, value_front)
+                                updateProgress(progressBack_overlay, value_back)
+                                updateProgress(progressLeft_overlay, value_left)
+                                updateProgress(progressRight_overlay, value_right)
+
                             } else {
                                 Log.w("BluetoothClient", "Invalid numeric data received.")
                             }
@@ -190,6 +200,11 @@ class DemoFragment : CameraFragment() {
         progressBack = mViewBinding.root.findViewById(R.id.progress_back)
         progressLeft = mViewBinding.root.findViewById(R.id.progress_left)
         progressRight = mViewBinding.root.findViewById(R.id.progress_right)
+
+        progressFront_overlay = mViewBinding.root.findViewById(R.id.progress_front_overlay )
+        progressBack_overlay = mViewBinding.root.findViewById(R.id.progress_back_overlay)
+        progressLeft_overlay = mViewBinding.root.findViewById(R.id.progress_left_overlay)
+        progressRight_overlay = mViewBinding.root.findViewById(R.id.progress_right_overlay)
     }
 
     private fun updateProgress(bar: ProgressBar, value: Int) {
