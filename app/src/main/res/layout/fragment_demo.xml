@@ -316,14 +316,14 @@
 
         <!-- Action Buttons -->
         <ImageButton
-            android:id="@+id/imageButton1"
+            android:id="@+id/listcameras"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginBottom="5dp"
             app:srcCompat="@mipmap/ic_capture_image" />
 
         <ImageButton
-            android:id="@+id/imageButton2"
+            android:id="@+id/buttonPairDevices"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginBottom="5dp"
