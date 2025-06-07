@@ -34,6 +34,12 @@ import com.vsh.screens.DeviceListViewModel
 import com.vsh.screens.DeviceListViewModelFactory
 import kotlinx.coroutines.launch
 import timber.log.Timber
+import android.util.Log
+import kotlinx.coroutines.delay
+
+
+import java.io.IOException
+import java.io.File
 
 data class UsbDevice(
     val usbDevcieId: Int,
@@ -42,11 +48,11 @@ data class UsbDevice(
     val classesStr: String
 )
 
-val usbDevice_FIXED = UsbDevice(
-    usbDevcieId = 1002,
-    displayName = "1902:8301 /dev/bus/usb/001/002",
-    vendorName = "6402",
-    classesStr = "USB_CLASS_MISC, USB_CLASS_VIDEO"
+var usbDeviceSelection = UsbDevice(
+    usbDevcieId = -1,
+    displayName = "",
+    vendorName = "",
+    classesStr = ""
 )
 
 class DevicesActivity : ComponentActivity() {
@@ -73,13 +79,77 @@ class DevicesActivity : ComponentActivity() {
         super.onResume()
         viewModel.begin()
 
-        lifecycleScope.launch {
-            viewModel.state.collect { 
-                viewModel.onPreviewOpened()
-                val intent =
-                    MainActivity.newInstance(applicationContext, usbDevice_FIXED.usbDevcieId)
-                startActivity(intent)
+
+
+        val fileName = "bmw_app.cfg"
+        val file = File(getExternalFilesDir(null), fileName)
+
+        if (file.exists()) {
+            try {
+                val content = file.readText()
+                Log.i("Debug USB CAMERA", "Read from file:\n$content")
+
+                var displayName = ""
+                var deviceId = ""
+                var vendorName = ""
+                val classLines = mutableListOf<String>()
+
+                var foundClasses = false
+                val lines = content.lines()
+                for (line in lines) {
+                    val trimmedLine = line.trim()
+
+                    when {
+                        "Display Name:" in trimmedLine -> {
+                            displayName = trimmedLine.substringAfter("Display Name:").trim()
+                            foundClasses = false
+                        }
+                        "Device ID:" in trimmedLine -> {
+                            deviceId = trimmedLine.substringAfter("Device ID:").trim()
+                            foundClasses = false
+                        }
+                        "Vendor Name:" in trimmedLine -> {
+                            vendorName = trimmedLine.substringAfter("Vendor Name:").trim()
+                            foundClasses = false
+                        }
+                        "Classes:" in trimmedLine -> {
+                            foundClasses = true
+                            classLines.add(trimmedLine.substringAfter("Classes:").trim())
+                        }
+                        foundClasses -> {
+                            classLines.add(trimmedLine)
+                        }
+                    }
+                }
+
+                val classes = classLines.joinToString("\n")
+
+                Log.i("Parsed USB", "Display Name: $displayName")
+                Log.i("Parsed USB", "Device ID: $deviceId")
+                Log.i("Parsed USB", "Vendor Name: $vendorName")
+                Log.i("Parsed USB", "Classes:$classes")
+
+                val usbDeviceSelection = UsbDevice(
+                                    usbDevcieId = deviceId.toIntOrNull() ?: -1, // fallback if parsing fails
+                                    displayName = displayName,
+                                    vendorName = vendorName,
+                                    classesStr = classes
+                )
+
+            } catch (e: IOException) {
+                Log.e("Debug USB CAMERA", "Error reading file", e)
             }
+        } else {
+            Log.w("Debug USB CAMERA", "File does not exist: ${file.absolutePath}")
+        }
+        lifecycleScope.launch {
+            viewModel.state.collect {
+                    viewModel.onPreviewOpened()
+
+                    val intent =
+                        MainActivity.newInstance(applicationContext, usbDeviceSelection.usbDevcieId)
+                    startActivity(intent)
+           }
         }
     }
 

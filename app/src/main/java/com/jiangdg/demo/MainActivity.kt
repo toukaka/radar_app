@@ -57,7 +57,6 @@ class MainActivity : AppCompatActivity() {
     }
         viewBinding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(viewBinding.root)
-        val usbDeviceId = intent.getIntExtra(KEY_USB_DEVICE, -1)
         if (savedInstanceState == null) {
             val transaction = supportFragmentManager.beginTransaction()
             transaction.replace(R.id.fragment_container, DemoFragment.newInstance(usbDeviceId))

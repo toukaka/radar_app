@@ -29,6 +29,43 @@ import com.jiangdg.demo.databinding.FragmentDemoBinding
 import java.io.IOException
 import java.util.*
 
+import java.io.File
+
+
+import android.hardware.usb.UsbConstants
+import android.hardware.usb.UsbDevice as AndroidUsbDevice
+import android.hardware.usb.UsbManager
+import com.jiangdg.usb.USBVendorId
+import com.vsh.screens.UsbDevice
+
+object UsbDeviceRepository {
+    fun enumerateDevices(usbManager: UsbManager): List<UsbDevice> {
+        val usbDevices = usbManager.deviceList
+        return usbDevices.values.map { device ->
+            val vendorName = USBVendorId.vendorName(device.vendorId)
+            val vidPidStr = String.format("%04x:%04x", device.vendorId, device.productId)
+            val classesList = mutableSetOf<Int>()
+            classesList.add(device.deviceClass)
+
+            if (device.deviceClass == UsbConstants.USB_CLASS_MISC) {
+                for (i in 0 until device.interfaceCount) {
+                    classesList.add(device.getInterface(i).interfaceClass)
+                }
+            }
+
+            UsbDevice(
+                usbDevcieId = device.deviceId,
+                displayName = "$vidPidStr ${device.deviceName}",
+                vendorName = if (vendorName.isEmpty()) "${device.vendorId}" else vendorName,
+                classesStr = classesList.map {
+                    USBVendorId.CLASSES[it] ?: "$it"
+                }.joinToString(",\n")
+            )
+        }
+    }
+}
+
+
 class BluetoothReader(private val socket: BluetoothSocket) {
     private var running = false
     private lateinit var readerThread: Thread
@@ -76,7 +113,7 @@ class DemoFragment : CameraFragment() {
         }
 
         binding.listcameras.setOnClickListener {
-            showcamerasDevicesDialog()
+            showUsbCamerasDialog()
         }
     }
 
@@ -204,29 +241,48 @@ class DemoFragment : CameraFragment() {
     }
 
 
-    private fun showcamerasDevicesDialog() {
-        val bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
-        if (bluetoothAdapter == null || !bluetoothAdapter.isEnabled) {
-            Toast.makeText(context, "Bluetooth not available or disabled", Toast.LENGTH_SHORT).show()
-            return
-        }
+    @SuppressLint("ServiceCast")
+private fun showUsbCamerasDialog() {
+    val usbManager = requireContext().getSystemService(android.content.Context.USB_SERVICE) as UsbManager
+    val devices = UsbDeviceRepository.enumerateDevices(usbManager)
 
-        val bondedDevices = bluetoothAdapter.bondedDevices.toList()
-        if (bondedDevices.isEmpty()) {
-            Toast.makeText(context, "No paired devices found", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        val deviceNames = bondedDevices.map { it.name }
-        AlertDialog.Builder(requireContext())
-            .setTitle("Select Bluetooth Device")
-            .setItems(deviceNames.toTypedArray()) { _, which ->
-                selectedDevice = bondedDevices[which]
-                connectToBluetoothDevice()
-            }
-            .setNegativeButton("Cancel", null)
-            .show()
+    if (devices.isEmpty()) {
+        Toast.makeText(context, "No USB cameras found", Toast.LENGTH_SHORT).show()
+        return
     }
+
+    val deviceNames = devices.map { it.displayName }
+    AlertDialog.Builder(requireContext())
+        .setTitle("Select USB Camera")
+        .setItems(deviceNames.toTypedArray()) { _, which ->
+            val selectedUsb = devices[which]
+            Toast.makeText(requireContext(), "Selected: ${selectedUsb.displayName}", Toast.LENGTH_SHORT).show()
+            Log.i("Debug USB CAMERA", "${selectedUsb.displayName}")
+            Log.i("Debug USB CAMERA", "${selectedUsb.usbDevcieId}")
+            Log.i("Debug USB CAMERA", "${selectedUsb.vendorName}")
+            Log.i("Debug USB CAMERA", "${selectedUsb.classesStr}")
+            val usbInfo = """
+                Display Name: ${selectedUsb.displayName}
+                Device ID: ${selectedUsb.usbDevcieId}
+                Vendor Name: ${selectedUsb.vendorName}
+                Classes: ${selectedUsb.classesStr}
+            """.trimIndent()
+
+            // Save to file
+            val fileName = "bmw_app.cfg"
+            val file = File(requireContext().getExternalFilesDir(null), fileName)
+
+            try {
+                file.writeText(usbInfo)
+                Log.i("Debug USB CAMERA", "Saved info to ${file.absolutePath}")
+            } catch (e: IOException) {
+                Log.e("Debug USB CAMERA", "Failed to write file", e)
+            }
+        }
+        .setNegativeButton("Cancel", null)
+        .show()
+}
+
     override fun getSelectedDeviceId(): Int = requireArguments().getInt(MainActivity.KEY_USB_DEVICE)
 
     companion object {

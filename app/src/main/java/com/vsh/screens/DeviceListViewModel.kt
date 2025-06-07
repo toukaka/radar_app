@@ -34,6 +34,40 @@ import kotlinx.coroutines.launch
 import timber.log.Timber
 import android.util.Log
 
+
+
+
+import android.hardware.usb.UsbDevice as AndroidUsbDevice
+import com.vsh.screens.UsbDevice
+
+object UsbDeviceRepository {
+    fun enumerateDevices(usbManager: UsbManager): List<UsbDevice> {
+        val usbDevices = usbManager.deviceList
+        return usbDevices.values.map { device ->
+            val vendorName = USBVendorId.vendorName(device.vendorId)
+            val vidPidStr = String.format("%04x:%04x", device.vendorId, device.productId)
+            val classesList = mutableSetOf<Int>()
+            classesList.add(device.deviceClass)
+
+            if (device.deviceClass == UsbConstants.USB_CLASS_MISC) {
+                for (i in 0 until device.interfaceCount) {
+                    classesList.add(device.getInterface(i).interfaceClass)
+                }
+            }
+
+            UsbDevice(
+                usbDevcieId = device.deviceId,
+                displayName = "$vidPidStr ${device.deviceName}",
+                vendorName = if (vendorName.isEmpty()) "${device.vendorId}" else vendorName,
+                classesStr = classesList.map {
+                    USBVendorId.CLASSES[it] ?: "$it"
+                }.joinToString(",\n")
+            )
+        }
+    }
+}
+
+
 data class UsbDevice(
     val usbDevcieId: Int,
     val displayName: String,
@@ -44,12 +78,6 @@ data class UsbDevice(
 data class DeviceListViewState(
     val devices: List<UsbDevice> = emptyList(),
     val openPreviewDeviceId: Int? = null
-)
-
-data class BenchmarkState(
-    val isRunning: Boolean = false,
-    val text: String = "",
-    val needToShareText: Boolean = false
 )
 
 class DeviceListViewModelFactory(
@@ -68,12 +96,10 @@ class DeviceListViewModel(
     private val _state = MutableStateFlow(
         DeviceListViewState()
     )
-    private val _benchmarkState = MutableStateFlow(BenchmarkState())
     private var loadDevicesJob : Job? = null
     private var isActive = false
 
     val state: StateFlow<DeviceListViewState> = _state
-    val benchmarkState: StateFlow<BenchmarkState> = _benchmarkState
 
     /**
      * Starts a periodic update loop to refresh the list of USB devices.
@@ -105,32 +131,12 @@ class DeviceListViewModel(
     }
 
     fun loadDevices() {
-        val usbDevices = usbManager.deviceList
-        _state.update {
-            it.copy(
-                devices = usbDevices.values.map { device ->
-                    val vendorName = USBVendorId.vendorName(device.vendorId)
-                    val vidPidStr = String.format("%04x:%04x", device.vendorId, device.productId)
-                    val classesList = mutableSetOf<Int>()
-                    classesList.add(device.deviceClass)
-                    if (device.deviceClass == UsbConstants.USB_CLASS_MISC) {
-                        for (i in 0 until device.interfaceCount) {
-                            classesList.add(device.getInterface(i).interfaceClass)
-                        }
-                    }
-
-                    UsbDevice(
-                        usbDevcieId = device.deviceId,
-                        displayName = "$vidPidStr ${device.deviceName}",
-                        vendorName = if (vendorName.isEmpty()) "${device.vendorId}" else vendorName,
-                        classesStr = classesList.map{
-                            USBVendorId.CLASSES[it] ?: "$it"
-                        }.joinToString(",\n")
-                    )
-                }
-            )
-        }
+    val devices = UsbDeviceRepository.enumerateDevices(usbManager)
+    _state.update {
+        it.copy(devices = devices)
     }
+}
+
 
     fun onClick(device: UsbDevice) {
         Log.d("UsbDeviceDebug", "Handling device ===> : $device")
