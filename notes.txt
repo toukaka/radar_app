@@ -1,0 +1,10 @@
+onReload => reloads the usb devices
+onEnumerate()=> enumarates the usb devices
+onClick(it) => opens preview
+
+usbDevcieId=1002, displayName=1902:8301 /dev/bus/usb/001/002, vendorName=6402
+
+Demo fragment => main frame of camera
+
+resolutionBtn => resolution selection delete
+2 3 16 26 19 12 
