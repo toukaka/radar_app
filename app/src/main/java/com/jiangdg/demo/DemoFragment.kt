@@ -92,8 +92,11 @@ class DemoFragment : CameraFragment() {
     private lateinit var progressBars: Map<String, ProgressBar>
 
     private val TAG = "BluetoothClient"
+    private val TAG_CAMERA = "UVC_CAMERA"
     private val MY_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB")
     private var selectedDevice: BluetoothDevice? = null
+
+    val config_fileName = "bmw_app.cfg"
 
     override fun initView() {
         super.initView()
@@ -115,6 +118,7 @@ class DemoFragment : CameraFragment() {
         binding.listcameras.setOnClickListener {
             showUsbCamerasDialog()
         }
+        connectToBluetoothDevice()
     }
 
     override fun initData() {
@@ -176,6 +180,7 @@ class DemoFragment : CameraFragment() {
 
     @SuppressLint("MissingPermission")
     private fun connectToBluetoothDevice() {
+        checkOrPromptBluetoothSensor()
         val device = selectedDevice
         val bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
         Log.i(TAG, "${selectedDevice?.name}")
@@ -215,30 +220,84 @@ class DemoFragment : CameraFragment() {
         }.start()
     }
 
+    // func to parse the sensor for config file
+    private fun checkOrPromptBluetoothSensor() {
+        val file = File(requireContext().getExternalFilesDir(null), config_fileName)
+        val bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
+        val content = if (file.exists()) file.readText() else ""
+
+        val regex = Regex("""^bluetooth_sensor:\s*(.*)$""", RegexOption.MULTILINE)
+        val match = regex.find(content)
+
+        if (match != null) {
+            val selectedDevice_name = match.groupValues[1].trim()
+            Log.i(TAG, "Bluetooth sensor configured from config: $selectedDevice_name")
+            val pairedDevices = bluetoothAdapter.bondedDevices
+            for (dev in pairedDevices) {
+                if (dev.name == selectedDevice_name) {
+                    selectedDevice = bluetoothAdapter.getRemoteDevice(dev.address)
+                    Log.i(TAG, "Bluetooth sensor mac adress from paired devices: $selectedDevice.addr")
+                    break  // Stop looping once found
+                }
+            }
+        } else {
+            // Prompt user to update
+            AlertDialog.Builder(requireContext())
+                .setTitle("Bluetooth Sensor Not Configured")
+                .setMessage("Please update the Bluetooth sensor settings.")
+                .setPositiveButton("Select Bluetooth Device") { _, _ ->
+                    showBluetoothDevicesDialog()
+                }
+                .setNegativeButton("Cancel", null)
+                .show()
+        }
+}
+
+
     @SuppressLint("MissingPermission")
     private fun showBluetoothDevicesDialog() {
-        val bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
-        if (bluetoothAdapter == null || !bluetoothAdapter.isEnabled) {
-            Toast.makeText(context, "Bluetooth not available or disabled", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        val bondedDevices = bluetoothAdapter.bondedDevices.toList()
-        if (bondedDevices.isEmpty()) {
-            Toast.makeText(context, "No paired devices found", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        val deviceNames = bondedDevices.map { it.name }
-        AlertDialog.Builder(requireContext())
-            .setTitle("Select Bluetooth Device")
-            .setItems(deviceNames.toTypedArray()) { _, which ->
-                selectedDevice = bondedDevices[which]
-                connectToBluetoothDevice()
-            }
-            .setNegativeButton("Cancel", null)
-            .show()
+    val bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
+    if (bluetoothAdapter == null || !bluetoothAdapter.isEnabled) {
+        Toast.makeText(context, "Bluetooth not available or disabled", Toast.LENGTH_SHORT).show()
+        return
     }
+    val bondedDevices = bluetoothAdapter.bondedDevices.toList()
+    if (bondedDevices.isEmpty()) {
+        Toast.makeText(context, "No paired devices found", Toast.LENGTH_SHORT).show()
+        return
+    }
+
+    val deviceNames = bondedDevices.map { it.name }
+    AlertDialog.Builder(requireContext())
+        .setTitle("Select Bluetooth Device Reboot application after selection")
+        .setItems(deviceNames.toTypedArray()) { _, which ->
+            selectedDevice = bondedDevices[which]
+            // Log selected Bluetooth device in file
+            val file = File(requireContext().getExternalFilesDir(null), config_fileName)
+
+            try {
+                var content = if (file.exists()) file.readText() else ""
+
+                val updatedLine = "bluetooth_sensor: ${selectedDevice?.name}"
+                val regex = Regex("""(?m)^bluetooth_sensor:.*$""")
+
+                content = if (regex.containsMatchIn(content)) {
+                    content.replace(regex, updatedLine)
+                } else {
+                    if (content.isNotBlank()) "$content\n$updatedLine" else updatedLine
+                }
+
+                file.writeText(content)
+                Log.i(TAG, "Updated Bluetooth device to file:\n$updatedLine")
+                // Now connect
+                connectToBluetoothDevice()
+            } catch (e: IOException) {
+                Log.e(TAG, "Failed to update file", e)
+            }
+        }
+        .setNegativeButton("Cancel", null)
+        .show()
+}
 
 
     @SuppressLint("ServiceCast")
@@ -257,10 +316,7 @@ private fun showUsbCamerasDialog() {
         .setItems(deviceNames.toTypedArray()) { _, which ->
             val selectedUsb = devices[which]
             Toast.makeText(requireContext(), "Selected: ${selectedUsb.displayName}", Toast.LENGTH_SHORT).show()
-            Log.i("Debug USB CAMERA", "${selectedUsb.displayName}")
-            Log.i("Debug USB CAMERA", "${selectedUsb.usbDevcieId}")
-            Log.i("Debug USB CAMERA", "${selectedUsb.vendorName}")
-            Log.i("Debug USB CAMERA", "${selectedUsb.classesStr}")
+
             val usbInfo = """
                 Display Name: ${selectedUsb.displayName}
                 Device ID: ${selectedUsb.usbDevcieId}
@@ -269,12 +325,11 @@ private fun showUsbCamerasDialog() {
             """.trimIndent()
 
             // Save to file
-            val fileName = "bmw_app.cfg"
-            val file = File(requireContext().getExternalFilesDir(null), fileName)
+            val file = File(requireContext().getExternalFilesDir(null), config_fileName)
 
             try {
                 file.writeText(usbInfo)
-                Log.i("Debug USB CAMERA", "Saved info to ${file.absolutePath}")
+                Log.i(TAG_CAMERA, "Saved info to ${file.absolutePath}")
             } catch (e: IOException) {
                 Log.e("Debug USB CAMERA", "Failed to write file", e)
             }

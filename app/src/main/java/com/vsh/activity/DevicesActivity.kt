@@ -78,9 +78,7 @@ class DevicesActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         viewModel.begin()
-
-
-
+        val TAG_CAMERA = "UVC_CAMERA"
         val fileName = "bmw_app.cfg"
         val file = File(getExternalFilesDir(null), fileName)
 
@@ -124,12 +122,12 @@ class DevicesActivity : ComponentActivity() {
 
                 val classes = classLines.joinToString("\n")
 
-                Log.i("Parsed USB", "Display Name: $displayName")
-                Log.i("Parsed USB", "Device ID: $deviceId")
-                Log.i("Parsed USB", "Vendor Name: $vendorName")
-                Log.i("Parsed USB", "Classes:$classes")
+                Log.i(TAG_CAMERA, "parsed Display Name: $displayName")
+                Log.i(TAG_CAMERA, "parsed Device ID: $deviceId")
+                Log.i(TAG_CAMERA, "parsed Vendor Name: $vendorName")
+                Log.i(TAG_CAMERA, "parsed Classes:$classes")
 
-                val usbDeviceSelection = UsbDevice(
+                usbDeviceSelection = UsbDevice(
                                     usbDevcieId = deviceId.toIntOrNull() ?: -1, // fallback if parsing fails
                                     displayName = displayName,
                                     vendorName = vendorName,
@@ -137,15 +135,18 @@ class DevicesActivity : ComponentActivity() {
                 )
 
             } catch (e: IOException) {
-                Log.e("Debug USB CAMERA", "Error reading file", e)
+                Log.e(TAG_CAMERA, "Error reading file", e)
             }
         } else {
-            Log.w("Debug USB CAMERA", "File does not exist: ${file.absolutePath}")
+            Log.w(TAG_CAMERA, "File does not exist: ${file.absolutePath}")
         }
         lifecycleScope.launch {
             viewModel.state.collect {
                     viewModel.onPreviewOpened()
-
+                    Log.i(TAG_CAMERA, "Selected USB Device ID: ${usbDeviceSelection.usbDevcieId}")
+                    Log.i(TAG_CAMERA, "Selected USB Display Name: ${usbDeviceSelection.displayName}")
+                    Log.i(TAG_CAMERA, "Selected USB Vendor Name: ${usbDeviceSelection.vendorName}")
+                    Log.i(TAG_CAMERA, "Selected USB Classes: ${usbDeviceSelection.classesStr}")
                     val intent =
                         MainActivity.newInstance(applicationContext, usbDeviceSelection.usbDevcieId)
                     startActivity(intent)
