@@ -200,9 +200,9 @@ class DemoFragment : CameraFragment() {
                     if (bytes > 0) {
                         val received = String(byteBuffer, 0, bytes)
                         Log.i("BluetoothClient", "Received raw data: $received")
-    
+
                         buffer.append(received)
-    
+
                         var newlineIndex: Int
                         while (buffer.contains("\n")) {
                             newlineIndex = buffer.indexOf("\n")
@@ -210,7 +210,7 @@ class DemoFragment : CameraFragment() {
                             buffer.delete(0, newlineIndex + 1)
     
                             Log.i("BluetoothClient", "Received full message: $fullLine")
-    
+
                             val parts = fullLine.split(",")
                             if (parts.size == 4) {
                                 val values = parts.mapNotNull { it.trim().toIntOrNull() }
