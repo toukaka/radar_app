@@ -1,8 +1,23 @@
 cmake_minimum_required(VERSION 3.22)
 
+
+find_library(
+    jpeg-lib
+    jpeg
+)
+
+
+
+find_library(
+    log-lib
+    log
+)
+
 set(UVCCAMERA ${CMAKE_CURRENT_LIST_DIR}/)
 include_directories(
     ${UVCCAMERA}/
+    ${CMAKE_CURRENT_LIST_DIR}/..
+
 )
 
 
@@ -27,6 +42,7 @@ list(APPEND SOURCES
     ${UVCCAMERA}/UVCPreviewJni.cpp
     ${UVCCAMERA}/UVCCameraAdjustments.cpp
     ${UVCCAMERA}/ProgressObserver.cpp
+    ${UVCCAMERA}/RawVideoRecorder.cpp
     ${UVCCAMERA}/JniUVCCamera.cpp
     ${UVCCAMERA}/JpegBenchmark.cpp
     ${UVCCAMERA}/LoadJpegImageFromAssetsUseCase.cpp

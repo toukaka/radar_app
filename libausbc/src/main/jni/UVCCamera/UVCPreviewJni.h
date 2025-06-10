@@ -33,18 +33,24 @@ private:
     ANativeWindow *mCaptureWindow;
     jobject mFrameCallbackObj;
 private:
+    bool saveRgbToJpeg(uint8_t* rgbData, int width, int height, const char* filename);
+    static std::string  generateTimestampedFilename();
     void clearDisplay();
     void draw_preview_rgb(uvc_frame_t *frame);
+    bool saveRgbFrameToFile(uint8_t* data, int width, int height, int index);
+   
 protected:
     void handleFrame(uint16_t deviceId, const UvcPreviewFrame &frame) override;
     void onPrepared(uint16_t deviceId, uint16_t frameWidth, uint16_t  frameHeight) override;
     void onFinished(uint16_t deviceId) override;
     void onFrameLost(uint16_t deviceId, std::chrono::steady_clock::time_point timestamp, uint8_t reason) override;
     void onFailed(uint16_t deviceId, UvcPreviewFailed error) override;
+    void startRawRecording_();
+    void stopRawRecording();
 public:
     UVCPreviewJni(uvc_device_handle_t *devh);
     ~UVCPreviewJni();
-
+    
     int setPreviewDisplay(ANativeWindow *preview_window);
     int setCaptureDisplay(ANativeWindow *capture_window);
     virtual int stopCapture() override;

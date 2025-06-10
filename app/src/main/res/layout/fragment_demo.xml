@@ -320,7 +320,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginBottom="5dp"
-            app:srcCompat="@mipmap/ic_capture_image" />
+            app:srcCompat="@mipmap/settings" />
 
         <ImageButton
             android:id="@+id/buttonPairDevices"
@@ -328,12 +328,31 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="5dp"
             app:srcCompat="@mipmap/bluetooth" />
+        
+        <ImageButton
+            android:id="@+id/stopBeepButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="5dp"
+            app:srcCompat="@mipmap/mute" />
+        
+          <ImageButton
+            android:id="@+id/information"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="5dp"
+            app:srcCompat="@mipmap/information" />
 
         <ImageButton
-            android:id="@+id/imageButton3"
+            android:id="@+id/videoRecord"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             app:srcCompat="@mipmap/ic_capture_video_off" />
+        <ImageButton
+            android:id="@+id/takecap"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:srcCompat="@mipmap/ic_capture_image" />
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

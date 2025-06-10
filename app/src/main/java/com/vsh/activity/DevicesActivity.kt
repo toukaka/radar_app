@@ -78,13 +78,13 @@ class DevicesActivity : ComponentActivity() {
     override fun onResume() {
         super.onResume()
         viewModel.begin()
-        val TAG_CAMERA = "UVC_CAMERA"
-        val fileName = "bmw_app.cfg"
-        val file = File(getExternalFilesDir(null), fileName)
+        val TAG_CAMERA = "UVC_CAMERA_Activity"
+        val config_file_path = "easycam_360.cfg"
+        val config_file = File(getExternalFilesDir(null), config_file_path)
 
-        if (file.exists()) {
+        if (config_file.exists()) {
             try {
-                val content = file.readText()
+                val content = config_file.readText()
                 Log.i("Debug USB CAMERA", "Read from file:\n$content")
 
                 var displayName = ""
@@ -138,7 +138,7 @@ class DevicesActivity : ComponentActivity() {
                 Log.e(TAG_CAMERA, "Error reading file", e)
             }
         } else {
-            Log.w(TAG_CAMERA, "File does not exist: ${file.absolutePath}")
+            Log.w(TAG_CAMERA, "File does not exist: ${config_file.absolutePath}")
         }
         lifecycleScope.launch {
             viewModel.state.collect {

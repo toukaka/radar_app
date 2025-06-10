@@ -104,6 +104,7 @@ def send_values():
     ]
     msg = ",".join(map(str, values)) + "\n"
     try:
+        print(msg)
         sock.send(msg.encode())
         status_label.config(text=f"Sent: {msg.strip()}")
     except Exception as e:

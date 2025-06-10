@@ -25,6 +25,99 @@
 
 #include <stdlib.h>
 #include "UVCPreviewJni.h"
+#include <jpeglib.h>
+#include <jni.h>
+#include <string>
+#include <android/log.h> 
+#include <fstream>
+#include <ctime>
+#include <sstream>
+#include "RawVideoRecorder.h"
+
+#define LOG_TAG "NativeDemo"
+#define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
+
+static bool gCaptureNextFrame = false;
+static bool isRecording_ = false;
+
+RawVideoRecorder rawRecorder;
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_jiangdg_demo_DemoFragment_takeCapture(JNIEnv *env, jobject thiz) {
+    __android_log_print(ANDROID_LOG_INFO, "NativeDemo", "Button 'Capture-jpeg' clicked from JNI");
+    gCaptureNextFrame = true;
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_jiangdg_demo_DemoFragment_StartRecord(JNIEnv *env, jobject thiz) {
+    __android_log_print(ANDROID_LOG_INFO, "NativeDemo", "Button 'start Record video' clicked from JNI");
+    isRecording_ = true;
+    rawRecorder.start("/storage/emulated/0/Android/data/com.jiangdg.ausbc/files/raw_video.rgb");
+}
+
+extern "C"
+JNIEXPORT void JNICALL
+Java_com_jiangdg_demo_DemoFragment_StopRecord(JNIEnv *env, jobject thiz) {
+    __android_log_print(ANDROID_LOG_INFO, "NativeDemo", "Button 'stop Record video' clicked from JNI");
+    isRecording_ = false;
+    rawRecorder.stop();
+}
+
+
+// Save RGB frame to JPEG
+bool UVCPreviewJni::saveRgbToJpeg(uint8_t* rgbData, int width, int height, const char* filename) {
+    FILE* outfile = fopen(filename, "wb");
+    if (!outfile) {
+        LOGI("Failed to open file %s", filename);
+        return false;
+    }
+
+    jpeg_compress_struct cinfo;
+    jpeg_error_mgr jerr;
+
+    cinfo.err = jpeg_std_error(&jerr);
+    jpeg_create_compress(&cinfo);
+    jpeg_stdio_dest(&cinfo, outfile);
+
+    cinfo.image_width = width;
+    cinfo.image_height = height;
+    cinfo.input_components = 3; // RGB
+    cinfo.in_color_space = JCS_RGB;
+
+    jpeg_set_defaults(&cinfo);
+    jpeg_set_quality(&cinfo, 90, TRUE);
+    jpeg_start_compress(&cinfo, TRUE);
+
+    JSAMPROW row_pointer;
+    int row_stride = width * 3;
+    while (cinfo.next_scanline < cinfo.image_height) {
+        row_pointer = &rgbData[cinfo.next_scanline * row_stride];
+        jpeg_write_scanlines(&cinfo, &row_pointer, 1);
+    }
+
+    jpeg_finish_compress(&cinfo);
+    fclose(outfile);
+    jpeg_destroy_compress(&cinfo);
+
+    LOGI("Saved frame to JPEG: %s", filename);
+    return true;
+}
+std::string UVCPreviewJni::generateTimestampedFilename() {
+    time_t now = time(nullptr);
+    struct tm timeinfo;
+    localtime_r(&now, &timeinfo);
+
+    char buffer[64];
+    strftime(buffer, sizeof(buffer), "%Y-%m-%d_%H-%M-%S", &timeinfo);
+
+    std::ostringstream oss;
+    oss << "/storage/emulated/0/DCIM/easycam360/easycam_cam_"
+        << buffer << ".jpeg";
+
+    return oss.str();
+}
 
 int UVCPreviewJni::setPreviewDisplay(ANativeWindow *preview_window) {
     pthread_mutex_lock(&preview_mutex);
@@ -44,37 +137,7 @@ int UVCPreviewJni::setPreviewDisplay(ANativeWindow *preview_window) {
 }
 
 int UVCPreviewJni::setCaptureDisplay(ANativeWindow *capture_window) {
-    /*pthread_mutex_lock(&capture_mutex);
-    {
-        if (isRunning() && isCapturing()) {
-            mIsCapturing = false;
-            if (mCaptureWindow) {
-                pthread_cond_signal(&capture_sync);
-                pthread_cond_wait(&capture_sync, &capture_mutex);    // wait finishing capturing
-            }
-        }
-        if (mCaptureWindow != capture_window) {
-            // release current Surface if already assigned.
-            if (UNLIKELY(mCaptureWindow))
-                ANativeWindow_release(mCaptureWindow);
-            mCaptureWindow = capture_window;
-            // if you use Surface came from MediaCodec#createInputSurface
-            // you could not change window format at least when you use
-            // ANativeWindow_lock / ANativeWindow_unlockAndPost
-            // to write frame data to the Surface...
-            // So we need check here.
-            if (mCaptureWindow) {
-                int32_t window_format = ANativeWindow_getFormat(mCaptureWindow);
-                if ((window_format != WINDOW_FORMAT_RGB_565)
-                    && (previewFormat == WINDOW_FORMAT_RGB_565)) {
-                    LOGE("window format mismatch, cancelled movie capturing.");
-                    ANativeWindow_release(mCaptureWindow);
-                    mCaptureWindow = NULL;
-                }
-            }
-        }
-    }
-    pthread_mutex_unlock(&capture_mutex);*/
+
     return 0;
 }
 
@@ -106,76 +169,17 @@ int UVCPreviewJni::stopCapture() {
         }
         pthread_mutex_unlock(&preview_mutex);
     }
-//    if (pthread_mutex_lock(&capture_mutex) == 0) {
-//        if (mCaptureWindow) {
-//            ANativeWindow_release(mCaptureWindow);
-//            mCaptureWindow = NULL;
-//        }
-//        pthread_mutex_unlock(&capture_mutex);
-//    }
+
     return res;
 }
 
 int UVCPreviewJni::setFrameCallback(JNIEnv *env, jobject frame_callback_obj, int pixel_format) {
-//    pthread_mutex_lock(&capture_mutex);
-//    {
-//        if (isRunning() && isCapturing()) {
-//            mIsCapturing = false;
-//            if (mFrameCallbackObj) {
-//                pthread_cond_signal(&capture_sync);
-//                pthread_cond_wait(&capture_sync, &capture_mutex);    // wait finishing capturing
-//            }
-//        }
-//        if (!env->IsSameObject(mFrameCallbackObj, frame_callback_obj)) {
-//            iframecallback_fields.onFrame = NULL;
-//            if (mFrameCallbackObj) {
-//                env->DeleteGlobalRef(mFrameCallbackObj);
-//            }
-//            mFrameCallbackObj = frame_callback_obj;
-//            if (frame_callback_obj) {
-//                // get method IDs of Java object for callback
-//                jclass clazz = env->GetObjectClass(frame_callback_obj);
-//                if (LIKELY(clazz)) {
-//                    iframecallback_fields.onFrame = env->GetMethodID(clazz,
-//                                                                     "onFrame", "(Ljava/nio/ByteBuffer;)V");
-//                } else {
-//                    LOGW("failed to get object class");
-//                }
-//                env->ExceptionClear();
-//                if (!iframecallback_fields.onFrame) {
-//                    LOGE("Can't find IFrameCallback#onFrame");
-//                    env->DeleteGlobalRef(frame_callback_obj);
-//                    mFrameCallbackObj = frame_callback_obj = NULL;
-//                }
-//            }
-//        }
-//        if (frame_callback_obj) {
-//            mPixelFormat = pixel_format;
-//            callbackPixelFormatChanged();
-//        }
-//    }
-//    pthread_mutex_unlock(&capture_mutex);
+
     return 0;
 }
 
 void UVCPreviewJni::clearDisplay() {
     ANativeWindow_Buffer buffer;
-//    pthread_mutex_lock(&capture_mutex);
-//    {
-//        if (LIKELY(mCaptureWindow)) {
-//            if (LIKELY(ANativeWindow_lock(mCaptureWindow, &buffer, NULL) == 0)) {
-//                uint8_t *dest = (uint8_t *) buffer.bits;
-//                const size_t bytes = buffer.width * PREVIEW_PIXEL_BYTES;
-//                const int stride = buffer.stride * PREVIEW_PIXEL_BYTES;
-//                for (int i = 0; i < buffer.height; i++) {
-//                    memset(dest, 0, bytes);
-//                    dest += stride;
-//                }
-//                ANativeWindow_unlockAndPost(mCaptureWindow);
-//            }
-//        }
-//    }
-//    pthread_mutex_unlock(&capture_mutex);
     pthread_mutex_lock(&preview_mutex);
     {
         if (LIKELY(mPreviewWindow)) {
@@ -202,6 +206,15 @@ void UVCPreviewJni::handleFrame(uint16_t deviceId,
         result = uvc_any2rgb(frame.mFrame, rgbFrame);
         if (LIKELY(!result)) {
             draw_preview_rgb(rgbFrame);
+            if (isRecording_) {
+                rawRecorder.writeFrame((uint8_t*)rgbFrame->data, rgbFrame->width * rgbFrame->height * 3);
+            }
+            if (gCaptureNextFrame) {
+                gCaptureNextFrame = false;
+                std::string filename = generateTimestampedFilename();
+                bool ok = saveRgbToJpeg((uint8_t*)rgbFrame->data, frame.mFrame->width, frame.mFrame->height, filename.c_str());
+                LOGI("Capture saved to %s: %s", filename.c_str(), ok ? "Success" : "Failure");
+            }
         }
         uvc_free_frame(rgbFrame);
     }
