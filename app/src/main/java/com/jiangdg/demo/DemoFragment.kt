@@ -31,6 +31,10 @@ import java.util.*
 
 import java.io.File
 
+import java.io.InputStream
+
+import kotlin.concurrent.thread
+
 
 import android.hardware.usb.UsbConstants
 import android.hardware.usb.UsbDevice as AndroidUsbDevice
@@ -95,6 +99,11 @@ class DemoFragment : CameraFragment() {
     private val TAG_CAMERA = "UVC_CAMERA"
     private val MY_UUID = UUID.fromString("00001101-0000-1000-8000-00805F9B34FB")
     private var selectedDevice: BluetoothDevice? = null
+
+    private var bluetoothSocket: BluetoothSocket? = null
+
+    private var inputStream: InputStream? = null
+    private var stopWorker = false
 
     val config_fileName = "bmw_app.cfg"
 
@@ -178,8 +187,54 @@ class DemoFragment : CameraFragment() {
         bar.layoutParams = bar.layoutParams.apply { height = newHeight }
     }
 
+
+    private fun listenForData(bluetoothSocket: BluetoothSocket) {
+        val inputStream = bluetoothSocket.inputStream ?: return
+        val buffer = StringBuilder()
+        val byteBuffer = ByteArray(1024)
+    
+        Thread {
+            try {
+                while (true) {
+                    val bytes = inputStream.read(byteBuffer)
+                    if (bytes > 0) {
+                        val received = String(byteBuffer, 0, bytes)
+                        Log.i("BluetoothClient", "Received raw data: $received")
+    
+                        buffer.append(received)
+    
+                        var newlineIndex: Int
+                        while (buffer.contains("\n")) {
+                            newlineIndex = buffer.indexOf("\n")
+                            val fullLine = buffer.substring(0, newlineIndex).trim()
+                            buffer.delete(0, newlineIndex + 1)
+    
+                            Log.i("BluetoothClient", "Received full message: $fullLine")
+    
+                            val parts = fullLine.split(",")
+                            if (parts.size == 4) {
+                                val values = parts.mapNotNull { it.trim().toIntOrNull() }
+                                if (values.size == 4) {
+                                    requireActivity().runOnUiThread {
+                                        listOf("front", "back", "left", "right").forEachIndexed { index, key ->
+                                            updateProgress(progressBars[key]!!, values[index])
+                                            updateProgress(progressBars["${key}_overlay"]!!, values[index])
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            } catch (e: IOException) {
+                Log.e("BluetoothClient", "Error reading: ${e.message}")
+            }
+        }.start()
+    }
+
     @SuppressLint("MissingPermission")
     private fun connectToBluetoothDevice() {
+
         checkOrPromptBluetoothSensor()
         val device = selectedDevice
         val bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
@@ -192,24 +247,17 @@ class DemoFragment : CameraFragment() {
 
         Thread {
             try {
-                val serverSocket = bluetoothAdapter.listenUsingRfcommWithServiceRecord("MyAppSPP", MY_UUID)
+                bluetoothSocket = device.createRfcommSocketToServiceRecord(MY_UUID);
                 Log.i("BluetoothClient", "**socket has been created")
-                val socket = serverSocket.accept()  // Blocks until connection or error
+                bluetoothAdapter.cancelDiscovery()
+                bluetoothSocket?.connect()
                 Log.i("BluetoothClient", "**socket has been accepted")
-                val reader = BluetoothReader(socket)
-                reader.startReading { data ->
-                    requireActivity().runOnUiThread {
-                        val parts = data.split(",")
-                        if (parts.size == 4) {
-                            val values = parts.mapNotNull { it.trim().toIntOrNull() }
-                            if (values.size == 4) {
-                                listOf("front", "back", "left", "right").forEachIndexed { i, key ->
-                                    updateProgress(progressBars[key]!!, values[i])
-                                    updateProgress(progressBars["${key}_overlay"]!!, values[i])
-                                }
-                            }
-                        }
-                    }
+                val socket = bluetoothSocket
+                inputStream = bluetoothSocket?.inputStream
+                Log.i("BluetoothClient", "**socket has been OK")
+
+                bluetoothSocket?.let { socket ->
+                    listenForData(socket)
                 }
             } catch (e: IOException) {
                 e.printStackTrace()
