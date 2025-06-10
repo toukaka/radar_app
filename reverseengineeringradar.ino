@@ -1,6 +1,8 @@
 // Uncomment to enable debug messages
 //#define DEBUG
-#include <SoftwareSerial.h>
+#include "BluetoothSerial.h"
+
+BluetoothSerial SerialBT;
 
 #define SENSOR1_ADDR 0b10001000
 #define SENSOR2_ADDR 0b10001110
@@ -8,11 +10,14 @@
 #define SENSOR4_ADDR 0b11101110
 
 
-// SoftwareSerial BTSerial(0, 1); // RX, TX
+#define max_bt_attemps 30 // Bluetooth attempts before reconnecting
 
-const int inputPin = 3;
+
+const int inputPin = 23;
 
 unsigned long pulseDuration = 0;
+char Sensor_name[] = "DriveEyePro_V2";
+
 
 byte lowByte = 0;
 byte highByte = 0;
@@ -20,6 +25,7 @@ byte highByte = 0;
 void setup() {
   pinMode(inputPin, INPUT);
   Serial.begin(9600);
+  SerialBT.begin(Sensor_name);
   // BTSerial.begin(9600);
 }
 
@@ -50,8 +56,21 @@ void loop() {
       // When sensor 4 is updated, print all distances on one line
       if (sensorNumber == 4) {
         String dataString = String(sensor1Distance) + "," + String(sensor2Distance) + "," + String(sensor3Distance) + "," + String(sensor4Distance);
-        Serial.println(dataString);
-        // BTSerial.print(dataString);
+        
+        //Start client discovery
+
+        while(!SerialBT.hasClient()){
+          SerialBT.begin(Sensor_name); // Replace with your BT device name
+          Serial.println("Waiting for Bluetooth master");
+          delay(200);
+        }
+        if (SerialBT.hasClient()) {  // or SerialBT.connected() depending on your library version
+          SerialBT.println(dataString);
+        } else {
+          // Try to restart Bluetooth
+          Serial.println("Bluetooth disconnected ... retry");
+          SerialBT.end();
+        }
       }
     }
   }
