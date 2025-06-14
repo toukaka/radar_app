@@ -69,28 +69,6 @@ object UsbDeviceRepository {
     }
 }
 
-
-class BluetoothReader(private val socket: BluetoothSocket) {
-    private var running = false
-    private lateinit var readerThread: Thread
-
-    fun startReading(onDataReceived: (String) -> Unit) {
-        running = true
-        readerThread = Thread {
-            try {
-                val input = socket.inputStream.bufferedReader()
-                while (running && !Thread.currentThread().isInterrupted) {
-                    val line = input.readLine()
-                    if (line != null) onDataReceived(line)
-                }
-            } catch (e: IOException) {
-                e.printStackTrace()
-            }
-        }
-        readerThread.start()
-    }
-}
-
 class DemoFragment : CameraFragment() {
     private lateinit var binding: FragmentDemoBinding
     private lateinit var progressBars: Map<String, ProgressBar>
@@ -105,6 +83,9 @@ class DemoFragment : CameraFragment() {
     private var inputStream: InputStream? = null
     private var stopWorker = false
 
+    private var isListening = false
+    private var shouldReconnect = true
+    
     val config_fileName = "bmw_app.cfg"
 
     override fun initView() {
@@ -173,8 +154,8 @@ class DemoFragment : CameraFragment() {
 
     private fun updateProgress(bar: ProgressBar, value: Int) {
         val color = when {
-            value <= 50 -> 0x804CAF50.toInt()
-            value <= 75 -> 0x80FFA500.toInt()
+            value <= 75 -> 0x804CAF50.toInt()
+            value <= 90 -> 0x80FFA500.toInt()
             else -> 0x80FF0000.toInt()
         }
         val drawable = ClipDrawable(ColorDrawable(color), Gravity.LEFT, ClipDrawable.HORIZONTAL)
@@ -190,82 +171,121 @@ class DemoFragment : CameraFragment() {
 
     private fun listenForData(bluetoothSocket: BluetoothSocket) {
         val inputStream = bluetoothSocket.inputStream ?: return
-        val buffer = StringBuilder()
         val byteBuffer = ByteArray(1024)
+    
+        isListening = true
     
         Thread {
             try {
-                while (true) {
-                    val bytes = inputStream.read(byteBuffer)
-                    if (bytes > 0) {
-                        val received = String(byteBuffer, 0, bytes)
-                        Log.i("BluetoothClient", "Received raw data: $received")
-
-                        buffer.append(received)
-
-                        var newlineIndex: Int
-                        while (buffer.contains("\n")) {
-                            newlineIndex = buffer.indexOf("\n")
-                            val fullLine = buffer.substring(0, newlineIndex).trim()
-                            buffer.delete(0, newlineIndex + 1)
+                while (isListening) {
+                    byteBuffer.fill(0)
     
-                            Log.i("BluetoothClient", "Received full message: $fullLine")
-
-                            val parts = fullLine.split(",")
-                            if (parts.size == 4) {
-                                val values = parts.mapNotNull { it.trim().toIntOrNull() }
-                                if (values.size == 4) {
-                                    requireActivity().runOnUiThread {
-                                        listOf("front", "back", "left", "right").forEachIndexed { index, key ->
-                                            updateProgress(progressBars[key]!!, values[index])
-                                            updateProgress(progressBars["${key}_overlay"]!!, values[index])
-                                        }
-                                    }
+                    // Initial read (blocking)
+                    val bytes = inputStream.read(byteBuffer)
+    
+                    if (bytes == -1) {
+                        Log.e("BluetoothClient", "Connection closed by remote device.")
+                        connectToBluetoothDevice()
+                        return@Thread
+                    }
+    
+                    var latestData = String(byteBuffer, 0, bytes)
+    
+                    // Drain any remaining available bytes
+                    while (inputStream.available() > 0) {
+                        byteBuffer.fill(0)
+                        val moreBytes = inputStream.read(byteBuffer)
+                        if (moreBytes > 0) {
+                            latestData = String(byteBuffer, 0, moreBytes)
+                        }
+                    }
+    
+                    Log.i("BluetoothClient", "Received latest message: $latestData")
+                    val parts = latestData.split(",")
+                    if (parts.size == 4) {
+                        val values = parts.mapNotNull { it.trim().toIntOrNull() }
+                        if (values.size == 4) {
+                            requireActivity().runOnUiThread {
+                                listOf("front", "back", "left", "right").forEachIndexed { index, key ->
+                                    updateProgress(progressBars[key]!!, values[index])
+                                    updateProgress(progressBars["${key}_overlay"]!!, values[index])
                                 }
                             }
                         }
                     }
                 }
             } catch (e: IOException) {
-                Log.e("BluetoothClient", "Error reading: ${e.message}")
+                Log.e("BluetoothClient", "Connection lost: ${e.message}")
+                if (shouldReconnect) {
+                    attemptReconnection()
+                }
+            } finally {
+                closeConnection()
             }
         }.start()
     }
-
+    
     @SuppressLint("MissingPermission")
     private fun connectToBluetoothDevice() {
-
         checkOrPromptBluetoothSensor()
         val device = selectedDevice
         val bluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
-        Log.i(TAG, "${selectedDevice?.name}")
+    
         if (device == null) {
             Log.e(TAG, "No Bluetooth device selected")
             Toast.makeText(requireContext(), "No Bluetooth device selected", Toast.LENGTH_SHORT).show()
             return
         }
-
+    
+        shouldReconnect = true
+    
         Thread {
-            try {
-                bluetoothSocket = device.createRfcommSocketToServiceRecord(MY_UUID);
-                Log.i("BluetoothClient", "**socket has been created")
-                bluetoothAdapter.cancelDiscovery()
-                bluetoothSocket?.connect()
-                Log.i("BluetoothClient", "**socket has been accepted")
-                val socket = bluetoothSocket
-                inputStream = bluetoothSocket?.inputStream
-                Log.i("BluetoothClient", "**socket has been OK")
-
-                bluetoothSocket?.let { socket ->
-                    listenForData(socket)
-                }
-            } catch (e: IOException) {
-                e.printStackTrace()
-                requireActivity().runOnUiThread {
-                    Toast.makeText(requireContext(), "Failed to connect to device", Toast.LENGTH_SHORT).show()
+            var connected = false
+            while (!connected && shouldReconnect) {
+                try {
+                    bluetoothSocket = device.createRfcommSocketToServiceRecord(MY_UUID)
+                    Log.i("BluetoothClient", "Socket created, attempting to connect...")
+                    bluetoothAdapter.cancelDiscovery()
+                    bluetoothSocket?.connect()
+                    Log.i("BluetoothClient", "Connection successful")
+                    requireActivity().runOnUiThread {
+                        Toast.makeText(requireContext(), "Connected to ${device.name}", Toast.LENGTH_SHORT).show()
+                    }
+                    connected = true
+                    listenForData(bluetoothSocket!!)
+                } catch (e: IOException) {
+                    Log.e("BluetoothClient", "Connection failed: ${e.message}")
+                    requireActivity().runOnUiThread {
+                        Toast.makeText(requireContext(), "Connection failed, retrying...", Toast.LENGTH_SHORT).show()
+                    }
+                    closeConnection()
+                    Thread.sleep(3000) // Wait before retrying
                 }
             }
         }.start()
+    }
+    
+    private fun attemptReconnection() {
+        requireActivity().runOnUiThread {
+            Toast.makeText(requireContext(), "Connection lost, attempting to reconnect...", Toast.LENGTH_SHORT).show()
+        }
+        connectToBluetoothDevice()
+    }
+    
+    fun stopBluetoothConnection() {
+        shouldReconnect = false
+        isListening = false
+        closeConnection()
+    }
+    
+    private fun closeConnection() {
+        try {
+            bluetoothSocket?.close()
+            Log.i("BluetoothClient", "Socket closed")
+        } catch (e: IOException) {
+            Log.e("BluetoothClient", "Error closing socket: ${e.message}")
+        }
+        bluetoothSocket = null
     }
 
     // func to parse the sensor for config file
