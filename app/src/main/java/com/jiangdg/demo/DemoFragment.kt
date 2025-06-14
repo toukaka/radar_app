@@ -54,6 +54,7 @@ class RadarBeepManager(context: Context) {
 
     private val soundPool = SoundPool.Builder().setMaxStreams(1).build()
     private val beepSoundId = soundPool.load(context, R.raw.beep, 1)
+    private val beepSoundId2 = soundPool.load(context, R.raw.beep2, 1)
     private var isBeeping = false
     private var beepJob: Job? = null
 
@@ -68,9 +69,18 @@ class RadarBeepManager(context: Context) {
         beepJob = CoroutineScope(Dispatchers.Main).launch {
             while (isBeeping) {
                 val interval = calculateInterval(currentDistance)
-
-                soundPool.play(beepSoundId, 1f, 1f, 1, 0, 1f)
-                delay(interval)
+                if (currentDistance > 99 ){
+                    Log.e("BluetoothClient", "long Beep")
+                    soundPool.play(beepSoundId2, 1f, 1f, 1, 0, 1f)
+                    delay(500)
+                }else if (currentDistance > 44){
+                    Log.e("BluetoothClient", "short Beep")
+                    soundPool.play(beepSoundId, 1f, 1f, 1, 0, 1f)
+                    delay(interval)
+                } else {
+                    //do nothing don't beep
+                    delay(100L)
+                }
             }
         }
     }
@@ -88,7 +98,9 @@ class RadarBeepManager(context: Context) {
         return when {
             distance > 90 -> 100L  // very close -> fast beeps
             distance > 75 -> 500L
-            distance > 50 -> 1000L
+            distance > 60 -> 800L
+            distance > 45 -> 1000L
+            distance > 30 -> 1200L
             else -> 1000L // far away -> slow beeps
         }
     }
@@ -226,7 +238,6 @@ class DemoFragment : CameraFragment() {
         val maxHeight = Resources.getSystem().displayMetrics.heightPixels / 3f
         val newHeight = (maxHeight * (value / 100f)).toInt().coerceAtLeast(1)
         bar.layoutParams = bar.layoutParams.apply { height = newHeight }
-        radarBeepManager.startBeeping { value.toFloat() }
     }
 
 
@@ -270,6 +281,8 @@ class DemoFragment : CameraFragment() {
                                 listOf("front", "back", "left", "right").forEachIndexed { index, key ->
                                     updateProgress(progressBars[key]!!, values[index])
                                     updateProgress(progressBars["${key}_overlay"]!!, values[index])
+                                    val maxValue = values.maxOrNull() ?: 0f
+                                    radarBeepManager.startBeeping { maxValue.toFloat() }
                                 }
                             }
                         }
@@ -316,20 +329,20 @@ class DemoFragment : CameraFragment() {
                     listenForData(bluetoothSocket!!)
                 } catch (e: IOException) {
                     Log.e("BluetoothClient", "Connection failed: ${e.message}")
-                    requireActivity().runOnUiThread {
-                        Toast.makeText(requireContext(), "Connection failed, retrying...", Toast.LENGTH_SHORT).show()
-                    }
+                    // requireActivity().runOnUiThread {
+                    //     Toast.makeText(requireContext(), "Connection failed, retrying...", Toast.LENGTH_SHORT).show()
+                    // }
                     closeConnection()
-                    Thread.sleep(3000) // Wait before retrying
+                    Thread.sleep(500) // Wait before retrying
                 }
             }
         }.start()
     }
     
     private fun attemptReconnection() {
-        requireActivity().runOnUiThread {
-            Toast.makeText(requireContext(), "Connection lost, attempting to reconnect...", Toast.LENGTH_SHORT).show()
-        }
+        // requireActivity().runOnUiThread {
+        //     Toast.makeText(requireContext(), "Connection lost, attempting to reconnect...", Toast.LENGTH_SHORT).show()
+        // }
         connectToBluetoothDevice()
     }
     

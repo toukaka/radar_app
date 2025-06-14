@@ -56,16 +56,20 @@ void loop() {
       // When sensor 4 is updated, print all distances on one line
       if (sensorNumber == 4) {
         String dataString = String(sensor1Distance) + "," + String(sensor2Distance) + "," + String(sensor3Distance) + "," + String(sensor4Distance);
-        
+         Serial.println("Waiting for Bluetooth master");
         //Start client discovery
-        SerialBT.println(dataString);
-        Serial.println(dataString);
+        if (SerialBT.hasClient()) {
+          SerialBT.begin(Sensor_name); // Replace with your BT device name
+          SerialBT.println(dataString);
+          Serial.println(dataString);
+          delay(500);
+        }
         // if (!SerialBT.hasClient()) {  // or SerialBT.connected() depending on your library version
         //   Serial.println("Bluetooth disconnected ... retry");
         //   SerialBT.end();
         //   SerialBT.begin(Sensor_name); // Replace with your BT device name
         //   Serial.println("Waiting for Bluetooth master");
-        delay(500);
+        
         // }
       }
     }
