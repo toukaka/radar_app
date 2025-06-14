@@ -42,6 +42,63 @@ import android.hardware.usb.UsbManager
 import com.jiangdg.usb.USBVendorId
 import com.vsh.screens.UsbDevice
 
+
+import android.media.SoundPool
+import android.os.Handler
+import android.os.Looper
+import kotlinx.coroutines.*
+import android.content.Context
+
+
+class RadarBeepManager(context: Context) {
+
+    private val soundPool = SoundPool.Builder().setMaxStreams(1).build()
+    private val beepSoundId = soundPool.load(context, R.raw.beep, 1)
+    private var isBeeping = false
+    private var beepJob: Job? = null
+
+    private var currentDistance = 100f
+
+    fun startBeeping(proximityProvider: () -> Float) {
+        currentDistance = proximityProvider()
+
+        if (isBeeping) return
+        isBeeping = true
+
+        beepJob = CoroutineScope(Dispatchers.Main).launch {
+            while (isBeeping) {
+                val interval = calculateInterval(currentDistance)
+
+                soundPool.play(beepSoundId, 1f, 1f, 1, 0, 1f)
+                delay(interval)
+            }
+        }
+    }
+
+    fun updateDistance(newDistance: Float) {
+        currentDistance = newDistance
+    }
+
+    fun stopBeeping() {
+        isBeeping = false
+        beepJob?.cancel()
+    }
+
+    private fun calculateInterval(distance: Float): Long {
+        return when {
+            distance > 90 -> 100L  // very close -> fast beeps
+            distance > 75 -> 500L
+            distance > 50 -> 1000L
+            else -> 1000L // far away -> slow beeps
+        }
+    }
+
+    fun release() {
+        soundPool.release()
+    }
+}
+
+
 object UsbDeviceRepository {
     fun enumerateDevices(usbManager: UsbManager): List<UsbDevice> {
         val usbDevices = usbManager.deviceList
@@ -86,10 +143,13 @@ class DemoFragment : CameraFragment() {
     private var isListening = false
     private var shouldReconnect = true
     
+    private lateinit var radarBeepManager: RadarBeepManager
+
     val config_fileName = "bmw_app.cfg"
 
     override fun initView() {
         super.initView()
+        radarBeepManager = RadarBeepManager(requireContext())
         progressBars = mapOf(
             "front" to binding.progressFront,
             "back" to binding.progressBack,
@@ -166,6 +226,7 @@ class DemoFragment : CameraFragment() {
         val maxHeight = Resources.getSystem().displayMetrics.heightPixels / 3f
         val newHeight = (maxHeight * (value / 100f)).toInt().coerceAtLeast(1)
         bar.layoutParams = bar.layoutParams.apply { height = newHeight }
+        radarBeepManager.startBeeping { value.toFloat() }
     }
 
 
