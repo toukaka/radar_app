@@ -14,10 +14,13 @@ BluetoothSerial SerialBT;
 
 
 const int inputPin = 23;
-int reset_connection = 0;
+
 unsigned long pulseDuration = 0;
 char Sensor_name[] = "DriveEyePro_V2";
 
+String ErrorString;
+String dataString;
+int Error_iteration = 0;
 
 byte lowByte = 0;
 byte highByte = 0;
@@ -27,15 +30,15 @@ void setup() {
   Serial.begin(9600);
   SerialBT.begin(Sensor_name);
   SerialBT.enableSSP();
-  //SerialBT.begin(9600);
 }
 
 void loop() {
   pulseDuration = pulseIn(inputPin, HIGH, 20000);
 
   if (pulseDuration > 990 && pulseDuration < 1020) {
+  
     ignoreNextNPulses(6);
-
+    
     byte DecodedAdressValue = decodeAddress();
     int sensorNumber = checkSensor(DecodedAdressValue);
 
@@ -55,32 +58,62 @@ void loop() {
       if (sensorNumber == 4) sensor4Distance = distance;
 
       // When sensor 4 is updated, print all distances on one line
+      
       if (sensorNumber == 4) {
-        String dataString = String(sensor1Distance) + "," + String(sensor2Distance) + "," + String(sensor3Distance) + "," + String(sensor4Distance);
+        dataString = String(sensor1Distance) + "," + String(sensor2Distance) + "," + String(sensor3Distance) + "," + String(sensor4Distance);
         if (SerialBT.hasClient()) {
           SerialBT.begin(Sensor_name); // Replace with your BT device name
           SerialBT.println(dataString);
           Serial.println(dataString);
           delay(500);
-          reset_connection = 0;
+          // empty Error string connexion ok
+          ErrorString = "";
+          Error_iteration = 0;
+          sensorNumber = 0;
+          dataString = "";
         } else {
-          if (reset_connection == 0){
+            // connection is lost
             SerialBT.flush();
             SerialBT.end();
             SerialBT.begin(Sensor_name);
             Serial.println("Reseting Connection ");
             SerialBT.begin(9600);
-            reset_connection = 1;
-          }
+            ErrorString = "%% --- Errno 22 --- %%";
+            delay(2000);
         }
+      }else {
+      // can't get a valid sensor number
+      if (dataString == ""){
+        ErrorString = "%% --- Errno 24 --- %%";
       }
     }
+    } else {
+      // can't get a valid sensor number
+      if (dataString == ""){
+        ErrorString = "%% --- Errno 23 --- %%";
+        }
+      // failed to retreive the sensor data
+      }
+    } else {
+      // can't get a valid Sensor Ecu start bit is not detected
+      if (dataString == ""){
+        ErrorString = "%% --- Errno 25 --- %%";
+      }
+    }
+    // Error and fail handler
+    if ((ErrorString != "")) {
+      Error_iteration++;
+      // ignore first 9 False error due to frame synchronization
+      if (Error_iteration > 9){
+        Serial.println(ErrorString);
+        SerialBT.println(ErrorString);
+        SerialBT.println("0,0,0,0");
+        delay(2000);
+      }
+    }
+    
   }
-}
-
-
 // ================= Helper Functions ===================
-
 
 int calculateRiskPercentage(float distanceCm) {
   if (distanceCm == 0) {

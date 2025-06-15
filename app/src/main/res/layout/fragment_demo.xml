@@ -335,6 +335,13 @@
             android:layout_height="wrap_content"
             android:layout_marginBottom="5dp"
             app:srcCompat="@mipmap/mute" />
+        
+          <ImageButton
+            android:id="@+id/information"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginBottom="5dp"
+            app:srcCompat="@mipmap/information" />
 
         <ImageButton
             android:id="@+id/imageButton3"

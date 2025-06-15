@@ -180,6 +180,11 @@ class DemoFragment : CameraFragment() {
             showBluetoothDevicesDialog()
         }
 
+        binding.information.setOnClickListener {
+            showCreditsDialog()
+        }
+
+
         binding.listcameras.setOnClickListener {
             showUsbCamerasDialog()
         }
@@ -275,7 +280,7 @@ class DemoFragment : CameraFragment() {
                         }
                     }
     
-                    Log.i("BluetoothClient", "Received latest message: $latestData")
+                    //Log.i("BluetoothClient", "Received latest message: $latestData")
                     val parts = latestData.split(",")
                     if (parts.size == 4) {
                         val values = parts.mapNotNull { it.trim().toIntOrNull() }
@@ -285,7 +290,7 @@ class DemoFragment : CameraFragment() {
                                     updateProgress(progressBars[key]!!, values[index])
                                     updateProgress(progressBars["${key}_overlay"]!!, values[index])
                                     val maxValue = values.maxOrNull() ?: 0f
-                                    Log.i("BluetoothClient", "++ Received latest message: $latestData")
+                                    //Log.i("BluetoothClient", "++ Received latest message: $latestData")
                                     radarBeepManager.startBeeping { maxValue.toFloat() }
                                 }
                             }
@@ -449,43 +454,59 @@ class DemoFragment : CameraFragment() {
 }
 
 
-    @SuppressLint("ServiceCast")
-private fun showUsbCamerasDialog() {
-    val usbManager = requireContext().getSystemService(android.content.Context.USB_SERVICE) as UsbManager
-    val devices = UsbDeviceRepository.enumerateDevices(usbManager)
-
-    if (devices.isEmpty()) {
-        Toast.makeText(context, "No USB cameras found", Toast.LENGTH_SHORT).show()
-        return
+    private fun showCreditsDialog(){
+        val builder = AlertDialog.Builder(requireContext())
+        builder.setTitle("Credits")
+        builder.setMessage(
+            "Name: TOUMI mohamed\n" +
+            "Contact: toumi.mednour@gmail.com\n" +
+            "Phone: +33 7 73 11 12 70 \n" +
+            "Company: Nextsys-solutions"
+        )
+        builder.setPositiveButton("OK") { dialog, _ ->
+            dialog.dismiss()
+        }
+        val dialog = builder.create()
+        dialog.show()
     }
 
-    val deviceNames = devices.map { it.displayName }
-    AlertDialog.Builder(requireContext())
-        .setTitle("Select USB Camera")
-        .setItems(deviceNames.toTypedArray()) { _, which ->
-            val selectedUsb = devices[which]
-            Toast.makeText(requireContext(), "Selected: ${selectedUsb.displayName}", Toast.LENGTH_SHORT).show()
+        @SuppressLint("ServiceCast")
+    private fun showUsbCamerasDialog() {
+        val usbManager = requireContext().getSystemService(android.content.Context.USB_SERVICE) as UsbManager
+        val devices = UsbDeviceRepository.enumerateDevices(usbManager)
 
-            val usbInfo = """
-                Display Name: ${selectedUsb.displayName}
-                Device ID: ${selectedUsb.usbDevcieId}
-                Vendor Name: ${selectedUsb.vendorName}
-                Classes: ${selectedUsb.classesStr}
-            """.trimIndent()
-
-            // Save to file
-            val file = File(requireContext().getExternalFilesDir(null), config_fileName)
-
-            try {
-                file.writeText(usbInfo)
-                Log.i(TAG_CAMERA, "Saved info to ${file.absolutePath}")
-            } catch (e: IOException) {
-                Log.e("Debug USB CAMERA", "Failed to write file", e)
-            }
+        if (devices.isEmpty()) {
+            Toast.makeText(context, "No USB cameras found", Toast.LENGTH_SHORT).show()
+            return
         }
-        .setNegativeButton("Cancel", null)
-        .show()
-}
+
+        val deviceNames = devices.map { it.displayName }
+        AlertDialog.Builder(requireContext())
+            .setTitle("Select USB Camera")
+            .setItems(deviceNames.toTypedArray()) { _, which ->
+                val selectedUsb = devices[which]
+                Toast.makeText(requireContext(), "Selected: ${selectedUsb.displayName}", Toast.LENGTH_SHORT).show()
+
+                val usbInfo = """
+                    Display Name: ${selectedUsb.displayName}
+                    Device ID: ${selectedUsb.usbDevcieId}
+                    Vendor Name: ${selectedUsb.vendorName}
+                    Classes: ${selectedUsb.classesStr}
+                """.trimIndent()
+
+                // Save to file
+                val file = File(requireContext().getExternalFilesDir(null), config_fileName)
+
+                try {
+                    file.writeText(usbInfo)
+                    Log.i(TAG_CAMERA, "Saved info to ${file.absolutePath}")
+                } catch (e: IOException) {
+                    Log.e("Debug USB CAMERA", "Failed to write file", e)
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
 
     override fun getSelectedDeviceId(): Int = requireArguments().getInt(MainActivity.KEY_USB_DEVICE)
 
