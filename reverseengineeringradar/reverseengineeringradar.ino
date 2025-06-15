@@ -14,7 +14,7 @@ BluetoothSerial SerialBT;
 
 
 const int inputPin = 23;
-
+int reset_connection = 0;
 unsigned long pulseDuration = 0;
 char Sensor_name[] = "DriveEyePro_V2";
 
@@ -26,7 +26,8 @@ void setup() {
   pinMode(inputPin, INPUT);
   Serial.begin(9600);
   SerialBT.begin(Sensor_name);
-  // BTSerial.begin(9600);
+  SerialBT.enableSSP();
+  //SerialBT.begin(9600);
 }
 
 void loop() {
@@ -56,21 +57,22 @@ void loop() {
       // When sensor 4 is updated, print all distances on one line
       if (sensorNumber == 4) {
         String dataString = String(sensor1Distance) + "," + String(sensor2Distance) + "," + String(sensor3Distance) + "," + String(sensor4Distance);
-         Serial.println("Waiting for Bluetooth master");
-        //Start client discovery
         if (SerialBT.hasClient()) {
           SerialBT.begin(Sensor_name); // Replace with your BT device name
           SerialBT.println(dataString);
           Serial.println(dataString);
           delay(500);
+          reset_connection = 0;
+        } else {
+          if (reset_connection == 0){
+            SerialBT.flush();
+            SerialBT.end();
+            SerialBT.begin(Sensor_name);
+            Serial.println("Reseting Connection ");
+            SerialBT.begin(9600);
+            reset_connection = 1;
+          }
         }
-        // if (!SerialBT.hasClient()) {  // or SerialBT.connected() depending on your library version
-        //   Serial.println("Bluetooth disconnected ... retry");
-        //   SerialBT.end();
-        //   SerialBT.begin(Sensor_name); // Replace with your BT device name
-        //   Serial.println("Waiting for Bluetooth master");
-        
-        // }
       }
     }
   }

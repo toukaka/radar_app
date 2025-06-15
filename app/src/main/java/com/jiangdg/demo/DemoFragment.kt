@@ -69,17 +69,20 @@ class RadarBeepManager(context: Context) {
         beepJob = CoroutineScope(Dispatchers.Main).launch {
             while (isBeeping) {
                 val interval = calculateInterval(currentDistance)
+                // Log.e("BluetoothClient", "currentDistance : $currentDistance")
+                // Log.e("BluetoothClient", "interval :$interval")
                 if (currentDistance > 99 ){
-                    Log.e("BluetoothClient", "long Beep")
+                    //Log.e("BluetoothClient", "long Beep")
                     soundPool.play(beepSoundId2, 1f, 1f, 1, 0, 1f)
                     delay(500)
                 }else if (currentDistance > 44){
-                    Log.e("BluetoothClient", "short Beep")
+                    //Log.e("BluetoothClient", "short Beep")
                     soundPool.play(beepSoundId, 1f, 1f, 1, 0, 1f)
                     delay(interval)
                 } else {
                     //do nothing don't beep
                     delay(100L)
+                    stopBeeping()
                 }
             }
         }
@@ -282,6 +285,7 @@ class DemoFragment : CameraFragment() {
                                     updateProgress(progressBars[key]!!, values[index])
                                     updateProgress(progressBars["${key}_overlay"]!!, values[index])
                                     val maxValue = values.maxOrNull() ?: 0f
+                                    Log.i("BluetoothClient", "++ Received latest message: $latestData")
                                     radarBeepManager.startBeeping { maxValue.toFloat() }
                                 }
                             }
@@ -344,12 +348,15 @@ class DemoFragment : CameraFragment() {
         //     Toast.makeText(requireContext(), "Connection lost, attempting to reconnect...", Toast.LENGTH_SHORT).show()
         // }
         connectToBluetoothDevice()
+        radarBeepManager.stopBeeping()
+        
     }
     
     fun stopBluetoothConnection() {
         shouldReconnect = false
         isListening = false
         closeConnection()
+        radarBeepManager.stopBeeping()
     }
     
     private fun closeConnection() {
