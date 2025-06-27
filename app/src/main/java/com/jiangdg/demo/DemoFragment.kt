@@ -52,10 +52,15 @@ class DemoFragment : CameraFragment() {
 
     override fun initView() {
         val ArtifactsdirPath = "/storage/emulated/0/DCIM/easycam360/"
+        val videoDirPath = ArtifactsdirPath + "video/"
+        val photoDirPath = ArtifactsdirPath + "capture/"
         val Artifactsdir = File(ArtifactsdirPath)
-
+        val Artifactsdir_videos = File(videoDirPath)
+        val Artifactsdir_captures = File(photoDirPath)
         if (!Artifactsdir.exists()) {
             val created = Artifactsdir.mkdirs()
+            Artifactsdir_videos.mkdirs()
+            Artifactsdir_captures.mkdirs()
             if (created) {
                 Log.d(TAG, "Artifactsdir created at $Artifactsdir")
             } else {
@@ -176,7 +181,7 @@ class DemoFragment : CameraFragment() {
         dialog.show()
     }
 
-        @SuppressLint("ServiceCast")
+    @SuppressLint("ServiceCast")
     private fun showUsbCamerasDialog() {
         val usbManager = requireContext().getSystemService(android.content.Context.USB_SERVICE) as UsbManager
         val devices = UsbDeviceRepository.enumerateDevices(usbManager)

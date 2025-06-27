@@ -113,7 +113,7 @@ std::string UVCPreviewJni::generateTimestampedFilename() {
     strftime(buffer, sizeof(buffer), "%Y-%m-%d_%H-%M-%S", &timeinfo);
 
     std::ostringstream oss;
-    oss << "/storage/emulated/0/DCIM/easycam360/easycam_cam_"
+    oss << "/storage/emulated/0/DCIM/easycam360/capture/easycam_cap_"
         << buffer << ".jpeg";
 
     return oss.str();

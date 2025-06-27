@@ -19,10 +19,10 @@ class RawToMp4Encoder(
     private val fps: Int = 30,
 ) {
     private val TAG = "RawToMp4Encoder"
-    val sdf = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault())
+    val sdf = SimpleDateFormat("yyyyMMdd_HH-mm-ss", Locale.getDefault())
     val timestamp = sdf.format(Date())
     private val rawFilePath = "/storage/emulated/0/Android/data/com.jiangdg.ausbc/files/raw_video.rgb"
-    private val outputPath = "/storage/emulated/0/DCIM/easycam360/easycam_video_$timestamp.mp4"
+    private val outputPath = "/storage/emulated/0/DCIM/easycam360/video/easycam_video_$timestamp.mp4"
 
     fun encode() {
         val rawFile = File(rawFilePath)
