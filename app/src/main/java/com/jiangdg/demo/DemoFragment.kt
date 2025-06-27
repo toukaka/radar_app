@@ -27,6 +27,7 @@ import java.io.File
 import java.io.InputStream
 import android.hardware.usb.UsbManager
 import kotlinx.coroutines.*
+import android.content.Intent
 
 
 class DemoFragment : CameraFragment() {
@@ -208,15 +209,23 @@ class DemoFragment : CameraFragment() {
                 } catch (e: IOException) {
                     Log.e(TAG, "Failed to write file", e)
                 }
+
+                val context = requireContext()
+                val intent = Intent(context, MainActivity::class.java).apply {
+                    putExtra(KEY_USB_DEVICE, selectedUsb.usbDevcieId)
+                }
+                context.startActivity(intent)
+                requireActivity().finish() // optional: close current activity to prevent stacking
+
             }
             .setNegativeButton("Cancel", null)
-            .show()
-            
+            .show()    
     }
 
     override fun getSelectedDeviceId(): Int = requireArguments().getInt(MainActivity.KEY_USB_DEVICE)
 
-    companion object {   
+    companion object {  
+        const val KEY_USB_DEVICE = "usbDeviceId" 
         fun newInstance(usbDeviceId: Int): DemoFragment {
             return DemoFragment().apply {
                 arguments = Bundle().apply {
